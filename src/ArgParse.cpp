@@ -59,6 +59,27 @@ void fileOpeningError(const std::string& type) {
     exit(EXIT_FAILURE);
 }
 
+static std::pair<std::string, std::string> parseFilePair(const char* arg) {
+    std::string s(arg);
+    auto pos = s.find(',');
+
+    if (pos == std::string::npos) {
+        invalidArgumentError("'-g f1,f2' requires a comma between two filepaths");
+    }
+
+    std::string f1 = s.substr(0, pos);
+    std::string f2 = s.substr(pos+1);
+
+    if (f1.empty()) {
+        filepathEmptyError("first filepath in -g f1,f2");
+    }
+    if(f2.empty()){
+        filepathEmptyError("second filepath in -g f1,f2");
+    }
+
+    return {f1, f2};
+}
+
 int Args::parse(int argc, char *argv[]) {
     if (argc == 1) {
         printUsage(std::cout);
@@ -89,7 +110,12 @@ int Args::parse(int argc, char *argv[]) {
                     invalidCombinationError(mode, option::GenerateECDF);
                 }
                 this->mode = option::GenerateECDF;
-                this->knownMatchesFilepath = optarg;
+
+                // -g f1,f2
+                auto [f1, f2] = parseFilePair(optarg);
+                this->knownMatchesFilepath = f1;
+                this->numFilepath = f2;
+                
                 break;
             }
             // ===== options =====

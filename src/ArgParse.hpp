@@ -43,7 +43,7 @@ void fileOpeningError(const std::string& type);
 
 struct Args {
     int optind;
-    std::string matrixFilepath, knownMatchesFilepath;
+    std::string matrixFilepath, knownMatchesFilepath, numFilepath;
     option mode;
     uint64_t numRandomPairs;
     bool doSine = false;
