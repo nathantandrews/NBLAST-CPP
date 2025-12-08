@@ -72,19 +72,13 @@ Point operator*(double lhs, const Point& rhs) {
 }
 
 // ================= PointAlignment Definitions =================
-void PointAlignment::computeRawScore(const DoubleVector2D& eCDFMatrix) {
-    // @todo fix raw scoring
-    if (this->distance < 0 || this->angleMeasure < 0) {
-        std::cerr << "distance or angleMeasure negative: dist=" << this->distance << " angle=" << this->angleMeasure << std::endl;
+void PointAlignment::computeRawScore(const LookUpTable& lut) {
+    if (distance < 0 || angleMeasure < 0) {
+        std::cerr << "Invalid distance or angleMeasure\n";
         exit(EXIT_FAILURE);
     }
-    int scaledDistance = (int) (sqrt(this->distance));
-    int scaledAngleMeasure = (int) (sqrt(MATRIX_THETA_SCALING_FACTOR * this->angleMeasure));
-    if (scaledDistance > pMatrix.size() || scaledAngleMeasure > pMatrix[0].size()) {
-        std::cerr << "scaled distance or scaled angleMeasure out of bounds: dist=" << scaledDistance << " angle=" << scaledAngleMeasure << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    return pMatrix[scaledDistance][scaledAngleMeasure] / pMatrix.back().back();
+
+    this->score = lut.lookUp(distance, angleMeasure);
 }
 void PointAlignment::printDifference(std::ostream& out) const {
     out << this->queryPointID << " " 

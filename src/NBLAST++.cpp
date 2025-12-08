@@ -2,6 +2,7 @@
 #include "Point.hpp"
 #include "Utils.hpp"
 #include "nanoflann.hpp"
+#include "LookUpTable.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -150,9 +151,9 @@ int countsToPValueMatrix(DoubleVector2D& matrix) {
     return 0;
 }
 
-void computeRawScores(const DoubleVector2D& eCDFMatrix, PAVector& matchVector) {
+void computeRawScores(const LookUpTable& lut, PAVector& matchVector) {
     for (auto& pm : matchVector) {
-        pm.computeRawScore(eCDFMatrix);
+        pm.computeRawScore(lut);
     }
 }
 
@@ -164,26 +165,26 @@ double sumRawScores(PAVector vec) {
     return res;
 }
 
-double scoreNeuronPair(const DoubleVector2D& eCDFMatrix, 
+double scoreNeuronPair(const LookUpTable& lut, 
                        const PointVector& queryVector, const PointVector& targetVector, bool doCosine) {
     // compute forward score
     PAVector forwardMatchVector = nearestNeighborKDTree(queryVector, targetVector, doCosine, false);
-    computeRawScores(eCDFMatrix, forwardMatchVector);
+    computeRawScores(lut, forwardMatchVector);
     double forwardTotalScore = sumRawScores(forwardMatchVector);
 
     // compute forward self score
     PAVector forwardSelfMatchVector = nearestNeighborKDTree(queryVector, queryVector, doCosine, false);
-    computeRawScores(eCDFMatrix, forwardSelfMatchVector);
+    computeRawScores(lut, forwardSelfMatchVector);
     double forwardSelfTotalScore = sumRawScores(forwardSelfMatchVector);
 
     // compute reverse score
     PAVector reverseMatchVector = nearestNeighborKDTree(targetVector, queryVector, doCosine, false);
-    computeRawScores(eCDFMatrix, reverseMatchVector);
+    computeRawScores(lut, reverseMatchVector);
     double reverseTotalScore = sumRawScores(reverseMatchVector);
 
     // compute reverse self score
     PAVector reverseSelfMatchVector = nearestNeighborKDTree(targetVector, targetVector, doCosine, false);
-    computeRawScores(eCDFMatrix, reverseSelfMatchVector);
+    computeRawScores(lut, reverseSelfMatchVector);
     double reverseSelfTotalScore = sumRawScores(reverseSelfMatchVector);
     
     // normalize forward and reverse by self
@@ -200,6 +201,9 @@ int main(int argc, char *argv[]) {
             if (a.matrixFilepath.empty()) { 
                 filepathEmptyError("Matrix");
             }
+
+            LookUpTable lut;
+            lut.loadFromTSV(a.matrixFilepath);
             
             DoubleVector2D eCDFMatrix(DISTANCE_BIN_COUNT, DoubleVector(ANGLE_BIN_COUNT, 1));
             rc = readMatrix(a.matrixFilepath, eCDFMatrix);
@@ -221,7 +225,7 @@ int main(int argc, char *argv[]) {
                 std::string strippedTarget = basenameNoExt(targetFilepath);
                 
                 std::cerr << "scoring " << strippedQuery << " " << strippedTarget << "\n";
-                double score = scoreNeuronPair(eCDFMatrix, queryVector, targetVector, a.doSine);
+                double score = scoreNeuronPair(lut, queryVector, targetVector, a.doSine);
                 std::cout << queryFilepath << " " << targetFilepath << " " << score << "\n";                
             }
             std::cout.flush();
