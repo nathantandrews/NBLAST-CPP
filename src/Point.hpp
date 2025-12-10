@@ -13,13 +13,12 @@ constexpr int POINT_DEFAULT_ID = -1;
 
 using DoubleVector = std::vector<double>;
 using DoubleVector2D = std::vector<DoubleVector>;
-using PointVector = std::vector<Point>;
-using PMVector = std::vector<PointAlignment>;
 
 // Individual points, stores parent, position, etc.
 struct Point {
-    int id, parent;
+    int id;
     double x, y, z;
+    int parent;
 
     Point(int id, double x, double y, double z, int parent) 
         : id(id), x(x), y(y), z(z), parent(parent) {}
@@ -30,14 +29,8 @@ struct Point {
 
     double magnitude(void) const;
 
-    Point computeMidpoint(const Point& other) const {
-        return *this + 0.5 * (other - *this);
-    }
-
-    double computeDistance(const Point& other) const {
-        return (*this - other).magnitude();
-    }
-
+    Point computeMidpoint(const Point& other) const;
+    double computeDistance(const Point& other) const;
     double computeAngleMeasure(const Point& other, bool do_cosine) const;
 
     Point& operator=(const Point& other);
@@ -49,6 +42,7 @@ struct Point {
     friend Point operator*(const Point& lhs, double rhs);
     friend Point operator*(double lhs, const Point& rhs);
 };
+using PointVector = std::vector<Point>;
 
 // Alignment structure, stores point-ids, distance, etc.
 struct PointAlignment {
@@ -83,6 +77,7 @@ struct PointAlignment {
 
     friend PointAlignment operator+(const PointAlignment& lhs, const PointAlignment& rhs);
 };
+using PAVector = std::vector<PointAlignment>;
 
 // KD-tree cloud (const)
 struct PointCloud

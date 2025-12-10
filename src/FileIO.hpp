@@ -1,6 +1,10 @@
 #ifndef FILEIO_HPP
 #define FILEIO_HPP
 
+#include "Point.hpp"
+
+#include <string>
+
 int loadPoints(const std::string& filepath, PointVector& vec);
 int pMatrixFromFile(const std::string& filepath, DoubleVector2D& matrix);
 

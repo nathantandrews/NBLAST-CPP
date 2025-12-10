@@ -1,22 +1,27 @@
 CXX := g++
-CXXFLAGS := -std=c++20 -O2 -Wall -Wextra -Wpedantic
+CXXFLAGS := -std=c++20 -O2 -Wall -Wextra # -Wpedantic
 
 TARGET := nblast++
+BINDIR := bin
+OBJDIR := _objs
 
 SRC := $(wildcard src/*.cpp)
 
-OBJ := $(SRC:.cpp=.o)
+OBJS := $(SRC:.cpp=.o)
 
-all: $(TARGET)
+all: setup $(TARGET)
 
-$(TARGET): $(OBJ)
+setup:
+	mkdir -p $(OBJDIR) $(BINDIR)
+
+$(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-%.o: %.cpp
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f $(OBJDIR) $(BINDIR) $(TARGET)
 
 run: $(TARGET)
 	./$(TARGET)

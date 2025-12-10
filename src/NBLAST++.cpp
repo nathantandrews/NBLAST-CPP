@@ -1,6 +1,8 @@
 #include "ArgParse.hpp"
 #include "Point.hpp"
 #include "Utils.hpp"
+#include "FileIO.hpp"
+#include "Error.hpp"
 #include "nanoflann.hpp"
 
 #include <iostream>
@@ -22,8 +24,6 @@
 
 using DoubleVector = std::vector<double>;
 using DoubleVector2D = std::vector<DoubleVector>;
-using PointVector = std::vector<Point>;
-using PAVector = std::vector<PointAlignment>;
 
 PointVector buildMidpoints(const PointVector& pts) {
     PointVector mp;
@@ -135,21 +135,6 @@ PAVector nearestNeighborNaive(const PointVector& query, const PointVector& targe
     return matchVector;
 }
 
-int countsToPValueMatrix(DoubleVector2D& matrix) {
-    for (size_t i = 0; i < matrix.size(); ++i) {
-        int tmp = 0, row_counter = 0;
-        for (size_t j = 0; j < matrix[i].size(); ++j) {
-            tmp = matrix[i][j];
-            matrix[i][j] += row_counter;
-            row_counter += tmp;
-            if (i > 0) {
-                matrix[i][j] += matrix[i - 1][j];
-            }
-        }
-    }
-    return 0;
-}
-
 void computeRawScores(const DoubleVector2D& eCDFMatrix, PAVector& matchVector) {
     for (auto& pm : matchVector) {
         pm.computeRawScore(eCDFMatrix);
@@ -202,7 +187,7 @@ int main(int argc, char *argv[]) {
             }
             
             DoubleVector2D eCDFMatrix(DISTANCE_BIN_COUNT, DoubleVector(ANGLE_BIN_COUNT, 1));
-            rc = readMatrix(a.matrixFilepath, eCDFMatrix);
+            rc = pMatrixFromFile(a.matrixFilepath, eCDFMatrix);
             assert(rc == 0);
             
             PointVector queryVector;

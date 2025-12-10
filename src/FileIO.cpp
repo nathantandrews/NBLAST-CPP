@@ -1,5 +1,6 @@
 #include "FileIO.hpp"
 #include "Point.hpp"
+#include "Error.hpp"
 #include "Utils.hpp"
 
 #include <fstream>
@@ -59,7 +60,6 @@ int readMatrix(const std::string& filepath, DoubleVector2D& matrix) {
         return -1;
     }
     std::string str;
-    size_t i, j;
     while (fin >> str) {
         if (str == "#") {
             fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');

@@ -1,4 +1,5 @@
 #include "ArgParse.hpp"
+#include "Error.hpp"
 
 #include <string>
 #include <iostream>
@@ -22,42 +23,6 @@ std::string optToString(option m) {
         default: return "unknown";
     }
 }
-void printUsage(std::ostream& out) { out << USAGE_MSG; }
-void invalidCombinationError(const std::string& m1, const std::string& m2) {
-    fprintf(stderr, INVALID_COMB_ERR_MSG, m1.c_str(), m2.c_str());
-    printUsage(std::cerr);
-    exit(EXIT_FAILURE);
-}
-void invalidArgumentError(const std::string& arg) {
-    fprintf(stderr, INVALID_ARG_ERR_MSG, arg.c_str()); 
-    printUsage(std::cerr);
-    exit(EXIT_FAILURE);
-}
-void outOfRangeError(const std::string& arg) {
-    fprintf(stderr, OUT_OF_RANGE_ERR_MSG, arg.c_str());
-    printUsage(std::cerr);
-    exit(EXIT_FAILURE);
-}
-void requiredArgumentError(char option) {
-    fprintf(stderr, REQ_ARG_ERR_MSG, option);
-    printUsage(std::cerr);
-    exit(EXIT_FAILURE);
-}
-void invalidOptionError(char option) {
-    fprintf(stderr, INVALID_OPT_ERR_MSG, option);
-    printUsage(std::cerr);
-    exit(EXIT_FAILURE);
-}
-void filepathEmptyError(const std::string& type) {
-    fprintf(stderr, FILEPATH_EMPTY_ERR_MSG, type.c_str());
-    printUsage(std::cerr);
-    exit(EXIT_FAILURE);
-}
-void fileOpeningError(const std::string& type) {
-    fprintf(stderr, FILE_OPENING_ERR_MSG, type.c_str());
-    printUsage(std::cerr);
-    exit(EXIT_FAILURE);
-}
 
 int Args::parse(int argc, char *argv[]) {
     if (argc == 1) {
@@ -76,7 +41,7 @@ int Args::parse(int argc, char *argv[]) {
             // query toolchain, compares one query .swc file to one or more target .swc files
             case 'q': {
                 if (this->mode != option::DefaultMode) {
-                    invalidCombinationError(mode, option::Query);
+                    invalidCombinationError(optToString(mode), optToString(option::Query));
                 }
                 this->mode = option::Query;
                 this->matrixFilepath = optarg; // needs to be changed to accept comma sep
@@ -86,7 +51,7 @@ int Args::parse(int argc, char *argv[]) {
             // given .swc files and known matches file @todo comma separated
             case 'g': {
                 if (mode != option::DefaultMode) { 
-                    invalidCombinationError(mode, option::GenerateECDF);
+                    invalidCombinationError(optToString(mode), optToString(option::GenerateECDF));
                 }
                 this->mode = option::GenerateECDF;
                 this->knownMatchesFilepath = optarg;
