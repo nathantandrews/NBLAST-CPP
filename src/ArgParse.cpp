@@ -29,7 +29,7 @@ int Args::parse(int argc, char *argv[]) {
         printUsage(std::cout);
         exit(EXIT_SUCCESS);
     }
-    int opt = 0, rc = 0;
+    int opt = 0;
     while ((opt = getopt(argc, argv, ":hq:g:s")) != -1) {
         switch (opt) {
             // print usage
@@ -65,14 +65,18 @@ int Args::parse(int argc, char *argv[]) {
             }
             case ':': {
                 requiredArgumentError(static_cast<char>(optopt));
+                break;
             }
             case '?': {
                 invalidOptionError(static_cast<char>(optopt));
+                break;
             }
             default: {
                 invalidOptionError(static_cast<char>(optopt));
+                break;
             }
         }
     }
     this->optind = optind;
+    return 0;
 }
