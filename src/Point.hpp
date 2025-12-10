@@ -70,11 +70,10 @@ struct PointAlignment {
         score(other.score) {}
 
     void computeRawScore(const DoubleVector2D& eCDFMatrix);
-
     void printDifference(std::ostream& out) const;
-
-    inline void printScore(std::ostream& out) const;
-
+    void printScore(std::ostream& out) const;
+    PointAlignment operator=(const PointAlignment& other);
+    
     friend PointAlignment operator+(const PointAlignment& lhs, const PointAlignment& rhs);
 };
 using PAVector = std::vector<PointAlignment>;

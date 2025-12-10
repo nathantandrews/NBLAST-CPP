@@ -80,8 +80,8 @@ void PointAlignment::computeRawScore(const DoubleVector2D& eCDFMatrix) {
         std::cerr << "distance or angleMeasure negative: dist=" << this->distance << " angle=" << this->angleMeasure << std::endl;
         exit(EXIT_FAILURE);
     }
-    int scaledDistance = (int) (sqrt(this->distance));
-    int scaledAngleMeasure = (int) (sqrt(MATRIX_THETA_SCALING_FACTOR * this->angleMeasure));
+    size_t scaledDistance = (int) (sqrt(this->distance));
+    size_t scaledAngleMeasure = (int) (sqrt(MATRIX_THETA_SCALING_FACTOR * this->angleMeasure));
     if (scaledDistance > eCDFMatrix.size() || scaledAngleMeasure > eCDFMatrix[0].size()) {
         std::cerr << "scaled distance or scaled angleMeasure out of bounds: dist=" << scaledDistance << " angle=" << scaledAngleMeasure << std::endl;
         exit(EXIT_FAILURE);
@@ -98,6 +98,17 @@ void PointAlignment::printScore(std::ostream& out) const {
     out << this->queryPointID << " "
         << this->targetPointID << " "
         << this->score << "\n";
+}
+PointAlignment PointAlignment::operator=(const PointAlignment& other) {
+    if (this != &other)
+    {
+        this->queryPointID = other.queryPointID;
+        this->targetPointID = other.targetPointID;
+        this->distance = other.distance;
+        this->angleMeasure = other.angleMeasure;
+        this->score = other.score;
+    }
+    return *this;
 }
 
 PointAlignment operator+(const PointAlignment& lhs, const PointAlignment& rhs) {
