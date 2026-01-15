@@ -191,14 +191,16 @@ int main(int argc, char *argv[]) {
             lut.loadFromTSV(a.matrixFilepath);
                         
             PointVector queryVector;
+            a.optind = 3; // HARDCODED @todo fix
             std::string queryFilepath = argv[a.optind];
-            ++a.optind;
+            std::cout << "queryFilepath: " << queryFilepath << std::endl;
             rc = loadPoints(queryFilepath, queryVector);
             assert(rc == 0);
             std::string strippedQuery = basenameNoExt(queryFilepath);
 
             for(int i = a.optind; i < argc; i++) {
                 std::string targetFilepath = argv[i];
+                std::cout << "targetFilepath: " << targetFilepath << std::endl;
                 if (targetFilepath.empty()) { std::cerr << "can't open " << targetFilepath << "; continuing\n"; continue; }
                 PointVector targetVector;
                 rc = loadPoints(targetFilepath, targetVector);
@@ -207,7 +209,7 @@ int main(int argc, char *argv[]) {
                 
                 std::cerr << "scoring " << strippedQuery << " " << strippedTarget << "\n";
                 double score = scoreNeuronPair(lut, queryVector, targetVector, a.doSine);
-                std::cout << queryFilepath << " " << targetFilepath << " " << score << "\n";                
+                std::cout << strippedQuery << " " << strippedTarget << " " << score << "\n";                
             }
             std::cout.flush();
             return 0;

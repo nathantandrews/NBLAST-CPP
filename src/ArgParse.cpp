@@ -9,6 +9,8 @@
 #include <cstring>
 #include <cassert>
 
+extern int optind;
+
 std::string optToString(option m) {
     switch (m)
     {
