@@ -7,6 +7,7 @@
 #include <cmath>
 #include <sstream>
 #include <vector>
+#include "LookUpTable.hpp"
 
 constexpr int POINT_DEFAULT_PARENT = -1;
 constexpr int POINT_DEFAULT_ID = -1;
@@ -69,7 +70,8 @@ struct PointAlignment {
         angleMeasure(other.angleMeasure),
         score(other.score) {}
 
-    void computeRawScore(const DoubleVector2D& eCDFMatrix);
+    void computeRawScore(const LookUpTable& lut);
+
     void printDifference(std::ostream& out) const;
     void printScore(std::ostream& out) const;
     PointAlignment operator=(const PointAlignment& other);

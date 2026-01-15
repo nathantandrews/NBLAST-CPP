@@ -4,6 +4,7 @@
 #include "FileIO.hpp"
 #include "Error.hpp"
 #include "nanoflann.hpp"
+#include "LookUpTable.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -135,9 +136,9 @@ PAVector nearestNeighborNaive(const PointVector& query, const PointVector& targe
     return matchVector;
 }
 
-void computeRawScores(const DoubleVector2D& eCDFMatrix, PAVector& matchVector) {
+void computeRawScores(const LookUpTable& lut, PAVector& matchVector) {
     for (auto& pm : matchVector) {
-        pm.computeRawScore(eCDFMatrix);
+        pm.computeRawScore(lut);
     }
 }
 
@@ -149,26 +150,26 @@ double sumRawScores(PAVector vec) {
     return res;
 }
 
-double scoreNeuronPair(const DoubleVector2D& eCDFMatrix, 
+double scoreNeuronPair(const LookUpTable& lut, 
                        const PointVector& queryVector, const PointVector& targetVector, bool doCosine) {
     // compute forward score
     PAVector forwardMatchVector = nearestNeighborKDTree(queryVector, targetVector, doCosine, false);
-    computeRawScores(eCDFMatrix, forwardMatchVector);
+    computeRawScores(lut, forwardMatchVector);
     double forwardTotalScore = sumRawScores(forwardMatchVector);
 
     // compute forward self score
     PAVector forwardSelfMatchVector = nearestNeighborKDTree(queryVector, queryVector, doCosine, false);
-    computeRawScores(eCDFMatrix, forwardSelfMatchVector);
+    computeRawScores(lut, forwardSelfMatchVector);
     double forwardSelfTotalScore = sumRawScores(forwardSelfMatchVector);
 
     // compute reverse score
     PAVector reverseMatchVector = nearestNeighborKDTree(targetVector, queryVector, doCosine, false);
-    computeRawScores(eCDFMatrix, reverseMatchVector);
+    computeRawScores(lut, reverseMatchVector);
     double reverseTotalScore = sumRawScores(reverseMatchVector);
 
     // compute reverse self score
     PAVector reverseSelfMatchVector = nearestNeighborKDTree(targetVector, targetVector, doCosine, false);
-    computeRawScores(eCDFMatrix, reverseSelfMatchVector);
+    computeRawScores(lut, reverseSelfMatchVector);
     double reverseSelfTotalScore = sumRawScores(reverseSelfMatchVector);
     
     // normalize forward and reverse by self
@@ -185,11 +186,10 @@ int main(int argc, char *argv[]) {
             if (a.matrixFilepath.empty()) { 
                 filepathEmptyError("Matrix");
             }
-            
-            DoubleVector2D eCDFMatrix(DISTANCE_BIN_COUNT, DoubleVector(ANGLE_BIN_COUNT, 1));
-            rc = pMatrixFromFile(a.matrixFilepath, eCDFMatrix);
-            assert(rc == 0);
-            
+
+            LookUpTable lut;
+            lut.loadFromTSV(a.matrixFilepath);
+                        
             PointVector queryVector;
             std::string queryFilepath = argv[a.optind];
             ++a.optind;
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
                 std::string strippedTarget = basenameNoExt(targetFilepath);
                 
                 std::cerr << "scoring " << strippedQuery << " " << strippedTarget << "\n";
-                double score = scoreNeuronPair(eCDFMatrix, queryVector, targetVector, a.doSine);
+                double score = scoreNeuronPair(lut, queryVector, targetVector, a.doSine);
                 std::cout << queryFilepath << " " << targetFilepath << " " << score << "\n";                
             }
             std::cout.flush();
@@ -215,6 +215,7 @@ int main(int argc, char *argv[]) {
         // generate a matrix for a given dataset, print it to stdout
         case option::GenerateECDF: {
             // @todo finish mode
+            return 0;
         }
         // first step in generating the matrix
         // randomly selects pairs of .swc files,
@@ -223,7 +224,7 @@ int main(int argc, char *argv[]) {
             uint64_t n = argc - optind; // number of input SWC files, from which random pairs will be chosen
             std::string queryFilepath, targetFilepath;
             srand48(time(0) + getpid()); // seed the random number generator
-            while(a.numRandomPairs > 0) {
+            while(a.numGeneratorIterations > 0) {
                 uint64_t i = optind + n * drand48(), j = optind + n * drand48();
 
                 queryFilepath = argv[i];
@@ -242,6 +243,6 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         // in case something went wrong in argument parsing
-        default: { invalidArgumentError(optToString(a.mode)); }
+        default: { invalidArgumentError(optToString(a.mode)); return -1; }
     }
 }

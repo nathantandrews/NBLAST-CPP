@@ -12,7 +12,7 @@ constexpr const char *USAGE_MSG =
 "    -r randomPairMatrixFile                        # read in the random pair matrix file\n"
 "    -m matchPairMatrixFile                         # read in the match pair matrix file\n"
 "    -c                                             # Calculate cosine angle measure instead of sine\n"
-"    -h                                             # print usage message";
+"    -h                                             # print usage message\n";
 constexpr const char *INVALID_COMB_ERR_MSG = "invalid option combination: -%s and -%s\n";
 constexpr const char *REQ_ARG_ERR_MSG = "option -%c requires an argument\n";
 constexpr const char *INVALID_OPT_ERR_MSG = "invalid option: -%c\n";

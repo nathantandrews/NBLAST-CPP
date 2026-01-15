@@ -24,6 +24,35 @@ std::string optToString(option m) {
     }
 }
 
+static std::pair<std::string, std::uint64_t> parseFilePair(const char* arg) {
+    std::string s(arg);
+    auto pos = s.find(',');
+
+    if (pos == std::string::npos) {
+        invalidArgumentError("'-g knownMatchesFile,#' requires a comma between the two values");
+        exit(1);
+    }
+
+    std::string knownMatchesFile = s.substr(0, pos);
+    std::string numItersString = s.substr(pos+1);
+    if (knownMatchesFile.empty()) {
+        filepathEmptyError("first filepath in -g knownMatchesFile,#");
+        exit(1);
+    }
+    uint64_t numItersUint;
+    try {
+        numItersUint = std::stoul(numItersString);
+    } catch (const std::invalid_argument& e) {
+        invalidArgumentError("numGeneratorIterations must be an unsigned integer");
+        exit(1);
+    } catch (const std::out_of_range& e) {
+        outOfRangeError("numGeneratorIterations");
+        exit(1);
+    }
+
+    return {knownMatchesFile, numItersUint};
+}
+
 int Args::parse(int argc, char *argv[]) {
     if (argc == 1) {
         printUsage(std::cout);
@@ -54,7 +83,12 @@ int Args::parse(int argc, char *argv[]) {
                     invalidCombinationError(optToString(mode), optToString(option::GenerateECDF));
                 }
                 this->mode = option::GenerateECDF;
-                this->knownMatchesFilepath = optarg;
+
+                // -g knownMatchesFile,f2
+                auto [knownMatchesFile, f2] = parseFilePair(optarg);
+                this->knownMatchesFilepath = knownMatchesFile;
+                this->numGeneratorIterations = f2;
+                
                 break;
             }
             // ===== options =====

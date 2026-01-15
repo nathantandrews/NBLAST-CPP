@@ -19,12 +19,12 @@ struct Args {
     int optind;
     std::string matrixFilepath, knownMatchesFilepath;
     option mode;
-    uint64_t numRandomPairs;
+    uint64_t numGeneratorIterations;
     bool doSine = false;
     Args() : optind(0), 
              matrixFilepath(""),
              mode(option::DefaultMode),
-             numRandomPairs(0) {}
+             numGeneratorIterations(0) {}
     int parse(int argc, char *argv[]);
 };
 
