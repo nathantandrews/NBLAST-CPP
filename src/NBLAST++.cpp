@@ -27,14 +27,14 @@ int main(int argc, char *argv[]) {
                         
             PointVector queryVector;
             std::string queryFilepath = argv[a.optind];
-            std::cerr << "queryFilepath: " << queryFilepath << std::endl;
+            std::cerr << "Query: " << queryFilepath << std::endl;
             rc = loadPoints(queryFilepath, queryVector);
             assert(rc == 0);
             std::string strippedQuery = basenameNoExt(queryFilepath);
 
             for(int i = a.optind; i < argc; i++) {
                 std::string targetFilepath = argv[i];
-                std::cerr << "targetFilepath: " << targetFilepath << std::endl;
+                std::cerr << "Target: " << targetFilepath << std::endl;
                 if (targetFilepath.empty()) { std::cerr << "can't open " << targetFilepath << "; continuing\n"; continue; }
                 PointVector targetVector;
                 rc = loadPoints(targetFilepath, targetVector);
