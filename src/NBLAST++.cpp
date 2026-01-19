@@ -191,7 +191,6 @@ int main(int argc, char *argv[]) {
             lut.loadFromTSV(a.matrixFilepath);
                         
             PointVector queryVector;
-            a.optind = 3; // HARDCODED @todo fix
             std::string queryFilepath = argv[a.optind];
             std::cout << "queryFilepath: " << queryFilepath << std::endl;
             rc = loadPoints(queryFilepath, queryVector);
