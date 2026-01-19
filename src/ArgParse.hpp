@@ -3,7 +3,7 @@
 
 #include <string>
 
-enum class option : int {
+enum class option_t : int {
     Query,
     GenerateECDF,
     Random,
@@ -13,17 +13,17 @@ enum class option : int {
     DefaultMode
 };
 
-std::string optToString(option m);
+std::string optToString(option_t m);
 
 struct Args {
     int optind;
     std::string matrixFilepath, knownMatchesFilepath;
-    option mode;
+    option_t mode;
     uint64_t numGeneratorIterations;
     bool doSine = false;
     Args() : optind(0), 
              matrixFilepath(""),
-             mode(option::DefaultMode),
+             mode(option_t::DefaultMode),
              numGeneratorIterations(0) {}
     int parse(int argc, char *argv[]);
 };

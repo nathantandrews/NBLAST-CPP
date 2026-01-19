@@ -11,17 +11,17 @@
 
 extern int optind;
 
-std::string optToString(option m) {
+std::string optToString(option_t m) {
     switch (m)
     {
-        case option::Query: return "q";
-        case option::GenerateECDF: return "g";
+        case option_t::Query: return "q";
+        case option_t::GenerateECDF: return "g";
 
-        case option::Random: return "r";
-        case option::ComputeMatrix: return "s";
-        case option::MatrixSpecified: return "m";
-        case option::TimeSpecified: return "t";
-        case option::DefaultMode: return "default";
+        case option_t::Random: return "r";
+        case option_t::ComputeMatrix: return "s";
+        case option_t::MatrixSpecified: return "m";
+        case option_t::TimeSpecified: return "t";
+        case option_t::DefaultMode: return "default";
         default: return "unknown";
     }
 }
@@ -61,6 +61,7 @@ int Args::parse(int argc, char *argv[]) {
         exit(EXIT_SUCCESS);
     }
     int opt = 0;
+    int opt_index = 1;
     while ((opt = getopt(argc, argv, ":hq:g:s")) != -1) {
         switch (opt) {
             // print usage
@@ -71,20 +72,20 @@ int Args::parse(int argc, char *argv[]) {
             // ===== main modes =====
             // query toolchain, compares one query .swc file to one or more target .swc files
             case 'q': {
-                if (this->mode != option::DefaultMode) {
-                    invalidCombinationError(optToString(mode), optToString(option::Query));
+                if (this->mode != option_t::DefaultMode) {
+                    invalidCombinationError(optToString(mode), optToString(option_t::Query));
                 }
-                this->mode = option::Query;
+                this->mode = option_t::Query;
                 this->matrixFilepath = optarg; // needs to be changed to accept comma sep
                 break;
             }
             // generator toolchain, generates match and random p-value matrices
             // given .swc files and known matches file @todo comma separated
             case 'g': {
-                if (mode != option::DefaultMode) { 
-                    invalidCombinationError(optToString(mode), optToString(option::GenerateECDF));
+                if (mode != option_t::DefaultMode) { 
+                    invalidCombinationError(optToString(mode), optToString(option_t::GenerateECDF));
                 }
-                this->mode = option::GenerateECDF;
+                this->mode = option_t::GenerateECDF;
 
                 // -g knownMatchesFile,f2
                 auto [knownMatchesFile, f2] = parseFilePair(optarg);
@@ -112,7 +113,9 @@ int Args::parse(int argc, char *argv[]) {
                 break;
             }
         }
+        opt_index += 1;
     }
-    this->optind = optind;
+    this->optind = opt_index + 1;
+    std::cout << this->optind << std::endl;
     return 0;
 }

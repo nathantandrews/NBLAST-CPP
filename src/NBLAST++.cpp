@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     a.parse(argc, argv);
     int rc;
     switch (a.mode) {
-        case option::Query: {
+        case option_t::Query: {
             if (a.matrixFilepath.empty()) { 
                 filepathEmptyError("Matrix");
             }
@@ -215,14 +215,14 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         // generate a matrix for a given dataset, print it to stdout
-        case option::GenerateECDF: {
+        case option_t::GenerateECDF: {
             // @todo finish mode
             return 0;
         }
         // first step in generating the matrix
         // randomly selects pairs of .swc files,
         // and outputs nearest neighbor calculations to stdout
-        case option::Random: {
+        case option_t::Random: {
             uint64_t n = argc - optind; // number of input SWC files, from which random pairs will be chosen
             std::string queryFilepath, targetFilepath;
             srand48(time(0) + getpid()); // seed the random number generator
