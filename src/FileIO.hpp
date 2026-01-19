@@ -5,6 +5,9 @@
 
 #include <string>
 
+using DoubleVector = std::vector<double>;
+using DoubleVector2D = std::vector<DoubleVector>;
+
 int loadPoints(const std::string& filepath, PointVector& vec);
 int pMatrixFromFile(const std::string& filepath, DoubleVector2D& matrix);
 

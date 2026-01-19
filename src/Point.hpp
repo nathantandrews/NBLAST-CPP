@@ -9,11 +9,11 @@
 #include <vector>
 #include "LookUpTable.hpp"
 
-constexpr int POINT_DEFAULT_PARENT = -1;
-constexpr int POINT_DEFAULT_ID = -1;
-
 using DoubleVector = std::vector<double>;
 using DoubleVector2D = std::vector<DoubleVector>;
+
+constexpr int POINT_DEFAULT_PARENT = -1;
+constexpr int POINT_DEFAULT_ID = -1;
 
 // Individual points, stores parent, position, etc.
 struct Point {
