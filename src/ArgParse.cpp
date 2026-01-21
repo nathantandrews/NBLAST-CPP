@@ -116,6 +116,5 @@ int Args::parse(int argc, char *argv[]) {
         opt_index += 1;
     }
     this->optind = opt_index + 1;
-    std::cout << this->optind << std::endl;
     return 0;
 }
