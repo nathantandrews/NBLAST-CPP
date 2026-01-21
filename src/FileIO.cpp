@@ -2,6 +2,7 @@
 #include "Point.hpp"
 #include "Error.hpp"
 #include "Utils.hpp"
+#include "Debug.hpp"
 
 #include <fstream>
 #include <string>
@@ -12,10 +13,11 @@ int loadPoints(const std::string& filepath, PointVector& vec) {
     if (!fin) { return -1; }
     
     int pointCount = computeLineCount(fin);
-    vec.reserve(pointCount);
+    debug("pointCount: %d\n", pointCount);
+    vec.resize(pointCount);
 
     std::string line;
-    unsigned id = -1;
+    size_t id = -1;
     while (std::getline(fin, line)) {
         if (line.empty()) continue;
         if (!line.empty() && line[0] == '#') continue;
@@ -25,7 +27,6 @@ int loadPoints(const std::string& filepath, PointVector& vec) {
         p.parse(line);
         vec[id] = p;
     }
-    vec.shrink_to_fit();
     fin.close();
     return 0;
 }

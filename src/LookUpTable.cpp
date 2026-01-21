@@ -1,4 +1,5 @@
 #include "LookUpTable.hpp"
+#include "Debug.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -57,7 +58,9 @@ int LookUpTable::findBin(const std::vector<double>& bins, double value) const{
 }
 
 double LookUpTable::lookUp(double distance, double angle) const{
+    debug("dist: %f\nangle: %f\n", distance, angle);
     int row = findBin(distanceBins, distance);
     int col = findBin(angleBins, angle);
+    debug("lookup res: %f\n", table[row][col]);
     return table[row][col];
 }

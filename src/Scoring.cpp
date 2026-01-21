@@ -5,6 +5,7 @@
 #include "Error.hpp"
 #include "nanoflann.hpp"
 #include "LookUpTable.hpp"
+#include "Debug.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -24,6 +25,7 @@
 #include <cassert>
 
 static PointVector buildMidpoints(const PointVector& pts) {
+    debug("buildMidpoints\n");
     PointVector mp;
     mp.reserve(pts.size());
 
@@ -42,6 +44,7 @@ PAVector nearestNeighborKDTree(const PointVector& query,
                                const PointVector& target, 
                                bool doCosine, 
                                bool doPrint) {
+    debug("nearestNeighborKDTree\n");
     // Build midpoints for query / target
     PointVector queryMidpoints  = buildMidpoints(query);
     PointVector targetMidpoints = buildMidpoints(target);
@@ -101,6 +104,7 @@ PAVector nearestNeighborNaive(const PointVector& query,
                               const PointVector& target, 
                               bool doCosine, 
                               bool doPrint) {
+    debug("nearestNeighborNaive\n");
     PAVector matchVector(query.size());
     for (const auto& query_i : query) {
         if (query_i.parent == POINT_DEFAULT_PARENT) continue;
@@ -140,12 +144,14 @@ PAVector nearestNeighborNaive(const PointVector& query,
 }
 
 static void computeRawScores(const LookUpTable& lut, PAVector& matchVector) {
+    debug("computeRawScores\n");
     for (auto& pm : matchVector) {
         pm.computeRawScore(lut);
     }
 }
 
 static double sumRawScores(PAVector vec) {
+    debug("sumRawScores\n");
     double res = 0;
     for (const auto& elem : vec) {
         res += elem.score;
@@ -157,6 +163,7 @@ double scoreNeuronPair(const LookUpTable& lut,
                        const PointVector& queryVector, 
                        const PointVector& targetVector, 
                        bool doCosine) {
+    debug("scoreNeuronPair\n");
     // compute forward score
     PAVector forwardMatchVector = nearestNeighborKDTree(queryVector, targetVector, doCosine, false);
     computeRawScores(lut, forwardMatchVector);
@@ -179,5 +186,6 @@ double scoreNeuronPair(const LookUpTable& lut,
     
     // normalize forward and reverse by self
     // then average for final score
+    debug("fts: %f\nfsts: %f\nrts: %f\nrsts: %f\n", forwardTotalScore, forwardSelfTotalScore, reverseTotalScore, reverseSelfTotalScore);
     return ((forwardTotalScore / forwardSelfTotalScore) + (reverseTotalScore / reverseSelfTotalScore)) / 2;
 }

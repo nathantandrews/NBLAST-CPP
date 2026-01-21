@@ -2,11 +2,15 @@ CXX := g++
 STD := -std=c++20
 WARN := -Wall -Wextra -Wpedantic
 
-TARGET := nblast++
+BUILDTARGET := nblast++
+
+TESTSRC := test/testScore.cpp
+TESTTARGET := testScore
+
+SWCDIR := /scratch/preserve/wayne/FlyWire/Skeletons/brain_and_nerve_cord_skeletons_banc_mirrored_swc
 
 SRC := $(wildcard src/*.cpp)
 
-# Default build mode
 BUILD ?= release
 
 ifeq ($(BUILD),debug)
@@ -19,9 +23,9 @@ endif
 
 OBJS := $(patsubst src/%.cpp,$(OBJDIR)/%.o,$(SRC))
 
-all: $(TARGET)
+all: $(BUILDTARGET)
 
-$(TARGET): $(OBJS)
+$(BUILDTARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 $(OBJDIR)/%.o: src/%.cpp | $(OBJDIR)
@@ -30,6 +34,9 @@ $(OBJDIR)/%.o: src/%.cpp | $(OBJDIR)
 $(OBJDIR):
 	mkdir -p $@
 
+$(TESTTARGET): $(TESTSRC) src/Scoring.cpp src/LookUpTable.cpp src/Point.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
 debug:
 	$(MAKE) BUILD=debug
 
@@ -37,18 +44,12 @@ release:
 	$(MAKE) BUILD=release
 
 clean:
-	rm -rf obj $(TARGET)
+	rm -rf obj $(BUILDTARGET)
 
-run: $(TARGET)
-	./$(TARGET)
-
-.PHONY: all debug release clean run
-
-TESTSRC := test/testScore.cpp
-TESTTARGET := test/testScore
-
-$(TESTTARGET): $(TESTSRC) src/Scoring.cpp src/LookUpTable.cpp src/Point.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^
+query: $(BUILDTARGET)
+	./$(BUILDTARGET) -q Costa2016/smat.fcwb.tsv $(SWCDIR)/$(QUERY).swc $(SWCDIR)/$(TARGET).swc > query_out.txt 2> query_err.txt
 
 test: $(TESTTARGET)
 	./$(TESTTARGET)
+
+.PHONY: all debug release clean run
