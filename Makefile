@@ -34,7 +34,7 @@ $(OBJDIR)/%.o: src/%.cpp | $(OBJDIR)
 $(OBJDIR):
 	mkdir -p $@
 
-$(TESTTARGET): $(TESTSRC) src/Scoring.cpp src/LookUpTable.cpp src/Point.cpp
+$(TESTTARGET): $(TESTSRC) src/Scoring.cpp src/LookUpTable.cpp src/Point.cpp src/Debug.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 debug:
