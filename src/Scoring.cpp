@@ -58,7 +58,7 @@ PAVector nearestNeighborKDTree(const PointVector& query,
     KDTree index(3, cloud, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     index.buildIndex();
 
-    PAVector matchVector;
+    PAVector matchVector(query.size());
     // For each query midpoint, perform nearest neighbor search
     for (const auto& qmp : queryMidpoints) {
         double query_pt[3] = { qmp.x, qmp.y, qmp.z };
@@ -101,7 +101,7 @@ PAVector nearestNeighborNaive(const PointVector& query,
                               const PointVector& target, 
                               bool doCosine, 
                               bool doPrint) {
-    PAVector matchVector;
+    PAVector matchVector(query.size());
     for (const auto& query_i : query) {
         if (query_i.parent == POINT_DEFAULT_PARENT) continue;
         

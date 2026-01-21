@@ -43,3 +43,12 @@ run: $(TARGET)
 	./$(TARGET)
 
 .PHONY: all debug release clean run
+
+TESTSRC := test/testScore.cpp
+TESTTARGET := test/testScore
+
+$(TESTTARGET): $(TESTSRC) src/Scoring.cpp src/LookUpTable.cpp src/Point.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+test: $(TESTTARGET)
+	./$(TESTTARGET)
