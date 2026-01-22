@@ -7,7 +7,7 @@ void debug(const char* format, ...) {
     va_list args;
     va_start(args, format);
 #ifdef DEBUG
-    vprintf(format, args);
+    vfprintf(stderr, format, args);
 #endif
     va_end(args);
     return;
