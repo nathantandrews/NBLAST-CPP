@@ -56,7 +56,7 @@ release:
 	$(MAKE) BUILD=release
 
 clean:
-	rm -rf obj $(BUILD_TARGET) $(TEST_TARGET)
+	rm -rf obj $(BUILD_TARGET) $(TEST_TARGET) fafb-to-banc-err.txt fafb-to-banc.txt
 
 query: $(BUILD_TARGET)
 	./$(BUILD_TARGET) -q Costa2016/smat.fcwb.tsv $(QUERY_DIR)/$(QUERY).swc $(TARGET_DIR)/$(TARGET).swc >> $(QUERY_OUT) 2>> $(QUERY_ERR)
