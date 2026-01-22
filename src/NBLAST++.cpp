@@ -31,17 +31,18 @@ int main(int argc, char *argv[]) {
             rc = loadPoints(queryFilepath, queryVector);
             assert(rc == 0);
             std::string strippedQuery = basenameNoExt(queryFilepath);
+            std::cerr << "Query Filepath: " << queryFilepath << std::endl;
             std::cerr << "Query: " << strippedQuery << std::endl;
 
             for(int i = a.optind + 1; i < argc; i++) {
                 std::string targetFilepath = argv[i];
                 std::string strippedTarget = basenameNoExt(targetFilepath);
-                std::cerr << "targetFilepath: " << targetFilepath << std::endl;
                 if (targetFilepath.empty()) { std::cerr << "can't open " << strippedTarget << ".swc; continuing\n"; continue; }
                 PointVector targetVector;
                 rc = loadPoints(targetFilepath, targetVector);
                 if (rc) { std::cerr << "failed to load points from " << strippedTarget << ".swc; continuing\n"; continue; }
                 std::cerr << "Target: " << strippedTarget << std::endl;
+                std::cerr << "Target Filepath: " << targetFilepath << std::endl;
                 
                 debug("scoring %s %s\n", strippedQuery.c_str(), strippedTarget.c_str());
                 double score = scoreNeuronPair(lut, queryVector, targetVector, a.doSine);

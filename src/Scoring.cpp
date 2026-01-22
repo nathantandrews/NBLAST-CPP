@@ -146,6 +146,9 @@ PAVector nearestNeighborNaive(const PointVector& query,
 static void computeRawScores(const LookUpTable& lut, PAVector& matchVector) {
     debug("computeRawScores\n");
     for (auto& pm : matchVector) {
+        if (pm.queryPointID == -1 || pm.targetPointID == -1) {
+            continue;
+        }
         pm.computeRawScore(lut);
     }
 }

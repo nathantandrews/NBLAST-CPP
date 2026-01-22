@@ -7,6 +7,7 @@
 #include <cmath>
 #include <sstream>
 #include <vector>
+#include <string>
 #include "LookUpTable.hpp"
 
 using DoubleVector = std::vector<double>;
@@ -72,7 +73,7 @@ struct PointAlignment {
 
     void computeRawScore(const LookUpTable& lut);
 
-    void printDifference(std::ostream& out) const;
+    void printDifference(std::ostream& out, const std::string& tag = "") const;
     void printScore(std::ostream& out) const;
     PointAlignment operator=(const PointAlignment& other);
     

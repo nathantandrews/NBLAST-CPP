@@ -2,12 +2,24 @@ CXX := g++
 STD := -std=c++20
 WARN := -Wall -Wextra -Wpedantic
 
-BUILDTARGET := nblast++
+BUILD_TARGET := nblast++
 
-TESTSRC := test/testScore.cpp
-TESTTARGET := testScore
+TEST_SRC := test/testScore.cpp
+TEST_TARGET := testScore
 
-SWCDIR := /scratch/preserve/wayne/FlyWire/Skeletons/brain_and_nerve_cord_skeletons_banc_mirrored_swc
+BANC := /scratch/preserve/wayne/FlyWire/Skeletons/brain_and_nerve_cord_skeletons_banc_mirrored_swc
+FAFB := /scratch/preserve/wayne/FlyWire/Skeletons/brain_and_nerve_cord_skeletons_fafb_banc_space_swc/banc_space_swc/elastix_tpsreg_240721
+
+ifeq ($(QD),b)
+	QUERY_DIR?=$(BANC)
+else
+	QUERY_DIR?=$(FAFB)
+endif
+ifeq ($(TD),b)
+	TARGET_DIR?=$(BANC)
+else
+	TARGET_DIR?=$(FAFB)
+endif
 
 SRC := $(wildcard src/*.cpp)
 
@@ -15,27 +27,27 @@ BUILD ?= release
 
 ifeq ($(BUILD),debug)
     CXXFLAGS := $(STD) $(WARN) -g -Og -DDEBUG
-    OBJDIR := obj/debug
+    OBJ_DIR := obj/debug
 else
     CXXFLAGS := $(STD) $(WARN) -O2 -DNDEBUG
-    OBJDIR := obj/release
+    OBJ_DIR := obj/release
 endif
 
-OBJS := $(patsubst src/%.cpp,$(OBJDIR)/%.o,$(SRC))
+OBJS := $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
-all: $(BUILDTARGET)
+all: $(BUILD_TARGET)
 
-$(BUILDTARGET): $(OBJS)
+$(BUILD_TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-$(OBJDIR)/%.o: src/%.cpp | $(OBJDIR)
+$(TEST_TARGET): $(TEST_SRC) src/Scoring.cpp src/LookUpTable.cpp src/Point.cpp src/Debug.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+$(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(OBJDIR):
+$(OBJ_DIR):
 	mkdir -p $@
-
-$(TESTTARGET): $(TESTSRC) src/Scoring.cpp src/LookUpTable.cpp src/Point.cpp src/Debug.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^
 
 debug:
 	$(MAKE) BUILD=debug
@@ -44,12 +56,12 @@ release:
 	$(MAKE) BUILD=release
 
 clean:
-	rm -rf obj $(BUILDTARGET)
+	rm -rf obj $(BUILD_TARGET) $(TEST_TARGET)
 
-query: $(BUILDTARGET)
-	./$(BUILDTARGET) -q Costa2016/smat.fcwb.tsv $(SWCDIR)/$(QUERY).swc $(SWCDIR)/$(TARGET).swc > query_out.txt 2> query_err.txt
+query: $(BUILD_TARGET)
+	./$(BUILD_TARGET) -q Costa2016/smat.fcwb.tsv $(QUERY_DIR)/$(QUERY).swc $(TARGET_DIR)/$(TARGET).swc >> $(QUERY_OUT) 2>> $(QUERY_ERR)
 
-test: $(TESTTARGET)
-	./$(TESTTARGET)
+test: $(TEST_TARGET)
+	./$(TEST_TARGET)
 
 .PHONY: all debug release clean run

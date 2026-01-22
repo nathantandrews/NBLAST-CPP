@@ -2,6 +2,7 @@
 #include "Utils.hpp"
 
 #include <vector>
+#include <string>
 
 using DoubleVector = std::vector<double>;
 using DoubleVector2D = std::vector<DoubleVector>;
@@ -78,10 +79,12 @@ void PointAlignment::computeRawScore(const LookUpTable& lut) {
         std::cerr << "Invalid distance or angleMeasure\n";
         exit(EXIT_FAILURE);
     }
-
     this->score = lut.lookUp(distance, angleMeasure);
 }
-void PointAlignment::printDifference(std::ostream& out) const {
+void PointAlignment::printDifference(std::ostream& out, const std::string& tag) const {
+    if (tag.size()) {
+       out << tag << ": ";
+    }
     out << this->queryPointID << " " 
         << this->targetPointID << " " 
         << this->distance << " " 
