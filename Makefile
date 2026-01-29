@@ -7,8 +7,8 @@ BUILD_TARGET := nblast++
 TEST_SRC := test/testScore.cpp
 TEST_TARGET := testScore
 
-BANC := /scratch/preserve/wayne/FlyWire/Skeletons/brain_and_nerve_cord_skeletons_banc_mirrored_swc
-FAFB := /scratch/preserve/wayne/FlyWire/Skeletons/brain_and_nerve_cord_skeletons_fafb_banc_space_swc/banc_space_swc/elastix_tpsreg_240721
+BANC := /scratch/preserve/wayne/FlyWire/Skeletons/banc_mirrored
+FAFB := /scratch/preserve/wayne/FlyWire/Skeletons/fafb_banc_space/banc_space_swc/elastix_tpsreg_240721
 
 ifeq ($(QD),b)
 	QUERY_DIR?=$(BANC)
