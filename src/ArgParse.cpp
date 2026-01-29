@@ -16,17 +16,13 @@ std::string optToString(option_t m) {
     {
         case option_t::Query: return "q";
         case option_t::GenerateECDF: return "g";
-
-        case option_t::Random: return "r";
-        case option_t::ComputeMatrix: return "s";
         case option_t::MatrixSpecified: return "m";
-        case option_t::TimeSpecified: return "t";
         case option_t::DefaultMode: return "default";
         default: return "unknown";
     }
 }
 
-static std::pair<std::string, std::uint64_t> parseFilePair(const char* arg) {
+std::pair<std::string, std::uint64_t> parseFilePair(const char* arg) {
     std::string s(arg);
     auto pos = s.find(',');
 

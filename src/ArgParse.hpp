@@ -14,6 +14,7 @@ enum class option_t : int {
 };
 
 std::string optToString(option_t m);
+std::pair<std::string, std::uint64_t> parseFilePair(const char* arg);
 
 struct Args {
     int optind;

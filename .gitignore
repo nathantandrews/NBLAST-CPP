@@ -1,5 +1,8 @@
+# IDE files
 .vscode
+# output files
 obj
-nblast++
-testScore
 *.txt
+# executables
+nblast++
+test_runner
