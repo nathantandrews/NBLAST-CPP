@@ -1,0 +1,6 @@
+# SWC format file
+# based on specifications at http://www.neuronland.org/NLMorphologyConverter/MorphologyFormats/SWC/Spec.html
+# Created by nat::write.neuron.swc
+# PointNo Label X Y Z Radius Parent 
+1 2 683216 116208 242595 848 -1
+2 2 684064 115808 241875 637 1
