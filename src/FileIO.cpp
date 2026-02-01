@@ -5,6 +5,7 @@
 #include "Debug.hpp"
 
 #include <fstream>
+#include <filesystem>
 #include <string>
 #include <limits>
 
@@ -92,5 +93,14 @@ void printMatrix(const DoubleVector2D& matrix) {
             }
         }
         std::cout << "\n";
+    }
+}
+
+void ensureDirectory(const std::string& path) {
+    namespace fs = std::filesystem;
+
+    fs::path p(path);
+    if (p.has_parent_path()) {
+        fs::create_directories(p.parent_path());
     }
 }

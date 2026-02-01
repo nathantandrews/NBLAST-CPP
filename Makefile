@@ -71,11 +71,14 @@ clean:
 
 # ==================== run helpers ====================
 query: $(BUILD_TARGET)
-	./$(BUILD_TARGET) -q Costa2016/smat.fcwb.tsv $(QUERY_DIR)/$(QUERY).swc $(TARGET_DIR)/$(TARGET).swc >> $(QUERY_OUT) 2>> $(QUERY_ERR)
+	./$(BUILD_TARGET) -q Costa2016/smat.fcwb.tsv $(QUERY_DIR)/$(QUERY).swc $(TARGET_DIR)/$(TARGET).swc
+
+genmatrix: $(BUILD_TARGET)
+	./$(BUILD_TARGET) -g ,
 
 # ==================== run tests ====================
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
 # ==================== phony targets ====================
-.PHONY: all debug release clean query test
+.PHONY: all debug release clean query test genmatrix

@@ -42,7 +42,7 @@ static PointVector buildMidpoints(const PointVector& pts) {
 
 PAVector nearestNeighborKDTree(const PointVector& query, 
                                const PointVector& target, 
-                               bool doCosine, 
+                               bool doSine, 
                                bool doPrint) {
     debug("nearestNeighborKDTree\n");
     // Build midpoints for query / target
@@ -88,7 +88,7 @@ PAVector nearestNeighborKDTree(const PointVector& query,
         Point s_i = tj - ti;
 
         // angle measure
-        double angleMeasure = r_i.computeAngleMeasure(s_i, doCosine);
+        double angleMeasure = r_i.computeAngleMeasure(s_i, doSine);
 
         // output: id_i id_j distance angle
         PointAlignment pc{ qi.id, ti.id, std::sqrt(outDistanceSqr), angleMeasure };
@@ -102,7 +102,7 @@ PAVector nearestNeighborKDTree(const PointVector& query,
 
 PAVector nearestNeighborNaive(const PointVector& query, 
                               const PointVector& target, 
-                              bool doCosine, 
+                              bool doSine, 
                               bool doPrint) {
     debug("nearestNeighborNaive\n");
     PAVector matchVector(query.size());
@@ -129,7 +129,7 @@ PAVector nearestNeighborNaive(const PointVector& query,
                 target_min = target_i;
                 distance_min = distance_i;
 
-                double angle_diff_tmp = r_i.computeAngleMeasure(s_i, doCosine);
+                double angle_diff_tmp = r_i.computeAngleMeasure(s_i, doSine);
                 if (angle_diff_tmp == -1) continue;
                 angle_diff = angle_diff_tmp;
             }
@@ -165,25 +165,25 @@ static double sumRawScores(PAVector vec) {
 double scoreNeuronPair(const LookUpTable& lut, 
                        const PointVector& queryVector, 
                        const PointVector& targetVector, 
-                       bool doCosine) {
+                       bool doSine) {
     debug("scoreNeuronPair\n");
     // compute forward score
-    PAVector forwardMatchVector = nearestNeighborKDTree(queryVector, targetVector, doCosine, false);
+    PAVector forwardMatchVector = nearestNeighborKDTree(queryVector, targetVector, doSine, false);
     computeRawScores(lut, forwardMatchVector);
     double forwardTotalScore = sumRawScores(forwardMatchVector);
 
     // compute forward self score
-    PAVector forwardSelfMatchVector = nearestNeighborKDTree(queryVector, queryVector, doCosine, false);
+    PAVector forwardSelfMatchVector = nearestNeighborKDTree(queryVector, queryVector, doSine, false);
     computeRawScores(lut, forwardSelfMatchVector);
     double forwardSelfTotalScore = sumRawScores(forwardSelfMatchVector);
 
     // compute reverse score
-    PAVector reverseMatchVector = nearestNeighborKDTree(targetVector, queryVector, doCosine, false);
+    PAVector reverseMatchVector = nearestNeighborKDTree(targetVector, queryVector, doSine, false);
     computeRawScores(lut, reverseMatchVector);
     double reverseTotalScore = sumRawScores(reverseMatchVector);
 
     // compute reverse self score
-    PAVector reverseSelfMatchVector = nearestNeighborKDTree(targetVector, targetVector, doCosine, false);
+    PAVector reverseSelfMatchVector = nearestNeighborKDTree(targetVector, targetVector, doSine, false);
     computeRawScores(lut, reverseSelfMatchVector);
     double reverseSelfTotalScore = sumRawScores(reverseSelfMatchVector);
     
