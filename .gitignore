@@ -1,0 +1,9 @@
+# IDE files
+.vscode
+# output files
+obj
+*.txt
+# executables
+nblast++
+test_runner
+log
