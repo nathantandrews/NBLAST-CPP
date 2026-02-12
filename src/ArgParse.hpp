@@ -14,18 +14,21 @@ enum class option_t : int {
 };
 
 std::string optToString(option_t m);
-std::pair<std::string, std::uint64_t> parseFilePair(const char* arg);
-
 struct Args {
     int optind;
     std::string matrixFilepath, knownMatchesFilepath;
+    std::string queryDatasetFilepath, targetDatasetFilepath;
     option_t mode;
     uint64_t numGeneratorIterations;
     bool doSine = false;
     Args() : optind(0), 
              matrixFilepath(""),
+             knownMatchesFilepath(""),
+             queryDatasetFilepath(""),
+             targetDatasetFilepath(""),
              mode(option_t::DefaultMode),
-             numGeneratorIterations(0) {}
+             numGeneratorIterations(0),
+             doSine(false) {}
     int parse(int argc, char *argv[]);
 };
 

@@ -19,7 +19,7 @@ enum class LogLevel {
 };
 
 struct LoggerConfig {
-    LogLevel level = LogLevel::info;
+    LogLevel level = LogLevel::debug;
     bool showTimestamps = true;
     std::string filepath;
 };

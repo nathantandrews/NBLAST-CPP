@@ -53,3 +53,26 @@ int countsToPValueMatrix(DoubleVector2D& matrix) {
     return 0;
 }
 
+int splitOnComma(const char *arg, std::pair<std::string, std::string>& res) {
+    std::string s(arg);
+    auto pos = s.find(',');
+    if (pos == std::string::npos) {
+        return -1;
+    }
+    std::string arg1 = s.substr(0, pos);
+    std::string arg2 = s.substr(pos+1);
+    res.first = arg1;
+    res.second = arg2;
+    return 0;
+}
+
+int stringToUInt(std::string s, uint64_t& res) {
+    try {
+        res = std::stoul(s);
+        return 0;
+    } catch (const std::invalid_argument& e) {
+        return -1;
+    } catch (const std::out_of_range& e) {
+        return -2;
+    }
+}

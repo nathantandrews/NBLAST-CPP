@@ -1,5 +1,7 @@
 #include "ArgParse.hpp"
 #include "Error.hpp"
+#include "Logging.hpp"
+#include "Utils.hpp"
 
 #include <string>
 #include <iostream>
@@ -22,35 +24,6 @@ std::string optToString(option_t m) {
     }
 }
 
-std::pair<std::string, std::uint64_t> parseFilePair(const char* arg) {
-    std::string s(arg);
-    auto pos = s.find(',');
-
-    if (pos == std::string::npos) {
-        invalidArgumentError("'-g knownMatchesFile,#' requires a comma between the two values");
-        exit(1);
-    }
-
-    std::string knownMatchesFile = s.substr(0, pos);
-    std::string numItersString = s.substr(pos+1);
-    if (knownMatchesFile.empty()) {
-        filepathEmptyError("first filepath in -g knownMatchesFile,#");
-        exit(1);
-    }
-    uint64_t numItersUint;
-    try {
-        numItersUint = std::stoul(numItersString);
-    } catch (const std::invalid_argument& e) {
-        invalidArgumentError("numGeneratorIterations must be an unsigned integer");
-        exit(1);
-    } catch (const std::out_of_range& e) {
-        outOfRangeError("numGeneratorIterations");
-        exit(1);
-    }
-
-    return {knownMatchesFile, numItersUint};
-}
-
 int Args::parse(int argc, char *argv[]) {
     if (argc == 1) {
         printUsage(std::cout);
@@ -58,7 +31,7 @@ int Args::parse(int argc, char *argv[]) {
     }
     int opt = 0;
     int opt_index = 1;
-    while ((opt = getopt(argc, argv, ":hq:g:s")) != -1) {
+    while ((opt = getopt(argc, argv, ":hq:g:i:s")) != -1) {
         switch (opt) {
             // print usage
             case 'h': {
@@ -83,14 +56,51 @@ int Args::parse(int argc, char *argv[]) {
                 }
                 this->mode = option_t::GenerateECDF;
 
-                // -g knownMatchesFile,f2
-                auto [knownMatchesFile, f2] = parseFilePair(optarg);
+                // comma separated arg
+                std::pair<std::string, std::string> res;
+                int rc = splitOnComma(optarg, res);
+                if (rc) {
+                    invalidArgumentError("knownMatchesFile,#");
+                    exit(1);
+                }
+
+                std::string knownMatchesFile = res.first;
+                std::string numItersString = res.second;
+                if (knownMatchesFile.empty()) {
+                    filepathEmptyError("first filepath in -g knownMatchesFile,#");
+                    exit(1);
+                }
+                uint64_t numItersUint;
+                rc = stringToUInt(numItersString, numItersUint);
+                if (rc == -1) {
+                    invalidArgumentError("numGeneratorIterations must be an unsigned integer");
+                    exit(1);
+                } else if (rc == -2) {
+                    outOfRangeError("numGeneratorIterations");
+                    exit(1);
+                }
                 this->knownMatchesFilepath = knownMatchesFile;
-                this->numGeneratorIterations = f2;
+                this->numGeneratorIterations = numItersUint;
                 
                 break;
             }
             // ===== options =====
+            // input directories
+            case 'i': {
+                if (mode != option_t::GenerateECDF) { 
+                    invalidCombinationError("i", optToString(option_t::GenerateECDF));
+                }
+
+                std::pair<std::string, std::string> res; 
+                int rc = splitOnComma(optarg, res);
+                if (rc) {
+                    invalidArgumentError("queryDataset,targetDataset");
+                }
+                this->queryDatasetFilepath = res.first;
+                this->targetDatasetFilepath = res.second;
+                
+                break;
+            }
             // use sine instead of cosine
             case 's': {
                 this->doSine = true;

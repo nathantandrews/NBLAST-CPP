@@ -25,20 +25,6 @@ TEST_CASE(test_optToString_query) {
     REQUIRE_EQ(optToString(option_t::DefaultMode), "default");
 }
 
-TEST_CASE(test_parseFilePair_valid) {
-    auto [file, iters] = parseFilePair("matches.tsv,42");
-
-    REQUIRE_EQ(file, "matches.tsv");
-    REQUIRE_EQ(iters, 42u);
-}
-
-TEST_CASE(test_parseFilePair_large_number) {
-    auto [file, iters] = parseFilePair("foo,1000000");
-
-    REQUIRE_EQ(file, "foo");
-    REQUIRE_EQ(iters, 1'000'000u);
-}
-
 TEST_CASE(test_args_parse_query_mode) {
     optind = 1;
     Args args;
