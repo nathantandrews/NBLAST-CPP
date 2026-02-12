@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <cassert>
-
+#include <unordered_map>
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
@@ -80,33 +80,62 @@ int main(int argc, char *argv[]) {
 #else            
             srand48(time(0) + getpid()); // seed the random number generator
 #endif
-            
             ensureDirectory("out");
             std::ofstream outfile("out/generator-results.txt");
             std::ostream& out = outfile;
 
-            
-            uint64_t n = argc - a.optind; // number of input SWC files, from which random pairs will be chosen
-            std::string queryFilepath, targetFilepath;
+            std::unordered_map<std::string, std::string> fileLookUp;
 
-            while(a.numGeneratorIterations > 0) {
-                --a.numGeneratorIterations;
-                uint64_t i = a.optind + n * drand48(), j = a.optind + n * drand48();
-
-                queryFilepath = argv[i];
-                PointVector queryVector;
-                rc = loadPoints(queryFilepath, queryVector);
-                if (rc == -1) continue;
-
-                targetFilepath = argv[j];
-                PointVector targetVector;
-                rc = loadPoints(targetFilepath, targetVector);
-                if (rc == -1) continue;
-
-                out << basenameNoExt(queryFilepath) << " " << basenameNoExt(targetFilepath) << "\n";
-                PAVector matchVector = nearestNeighborKDTree(queryVector, targetVector, a.doSine, true);
+            for (int k = a.optind; k < argc; ++k) {
+                std::string path = argv[k];
+                std::string id = basenameNoExt(path);
+                fileLookUp[id] = path;
             }
+
+            std::ifstream csvFile(a.knownMatchesFilepath);
+            if (!csvFile) {
+                LOG_ERROR("Could not open matches file: %s", a.knownMatchesFilepath.c_str());
+                return -1;
+            }
+            
+            std::string line;
+            std::getline(csvFile, line); //skip header
+
+            while (std::getline(csvFile, line) && a.numGeneratorIterations > 0) {
+                std::stringstream ss(line);
+                std::string cellType, rootID, bancID, fafbID;
+
+                // Extract
+                std::getline(ss, cellType, ',');
+                std::getline(ss, rootID, ',');
+                std::getline(ss, bancID, ',');
+                std::getline(ss, fafbID, ',');
+
+                if (fileLookUp.count(bancID) && fileLookUp.count(fafbID)) {
+                    std::string queryPath = fileLookUp[bancID];
+                    std::string targetPath = fileLookUp[fafbID];
+
+                    PointVector queryVector, targetVector;
+                    if (loadPoints(queryPath, queryVector) == 0 && loadPoints(targetPath, targetVector) == 0) {
+                        out << basenameNoExt(queryPath) << " " << basenameNoExt(targetPath) << "\n";
+
+                        PAVector matchVector = nearestNeighborKDTree(queryVector, targetVector, a.doSine, true);
+
+                        for (const auto& match : matchVector) {
+                            match.printDifference(out);
+                        }
+                        // ?
+                        a.numGeneratorIterations--;
+                    }
+                }
+            }
+
             out.flush();
+
+            DoubleVector2D matrix(10, std::vector<double>(10, 0.0)); // 10 enough or smaller or larger? 
+            pMatrixFromFile("out/generator-results.txt", matrix);
+
+            printMatrix(matrix);
 
             return 0;
         }
