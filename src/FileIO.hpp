@@ -6,21 +6,14 @@
 #include <vector>
 #include <string>
 
-using DoubleVector = std::vector<double>;
-using DoubleVector2D = std::vector<DoubleVector>;
-
-int loadPoints(const std::string& filepath, PointVector& vec);
-int pMatrixFromFile(const std::string& filepath, DoubleVector2D& matrix);
-
-void printMatrix(std::ofstream& out, const DoubleVector2D& matrix);
-int readMatrix(const std::string& filepath, DoubleVector2D& matrix);
+PointVector loadPoints(const std::string& filepath);
 
 void ensureDirectory(const std::string& path);
 
-int getDatasetFilepaths(const std::string& filepath, std::vector<std::string>& pathVector);
+using StringVector = std::vector<std::string>;
+StringVector getDatasetFilepaths(const std::string& filepath);
 
-int getKnownMatchesFilepaths(const std::string& filepath, 
-                    std::vector<std::string>& queryVector, 
-                    std::vector<std::string>& targetVector);
+using StringVectorPair = std::pair<std::vector<std::string>, std::vector<std::string>>;
+StringVectorPair getKnownMatchesFilepaths(const std::string& filepath);
 
 #endif // FILEIO_HPP

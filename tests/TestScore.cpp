@@ -1,11 +1,12 @@
 #include "Test.hpp"
 #include "Scoring.hpp"
-#include "LookUpTable.hpp"
+#include "Matrix.hpp"
+#include "MatrixIO.hpp"
 #include "Point.hpp"
 
 #include <iostream>
 
-TEST_CASE(test_LookUpTable_basic) {
+TEST_CASE(test_Scoring_basic) {
     bool doCosine = true;
 
     PointVector query = {
@@ -24,17 +25,16 @@ TEST_CASE(test_LookUpTable_basic) {
         Point(4, 3, 3, 0, 2)
     };
 
-    LookUpTable lut;
-    REQUIRE(lut.loadFromTSV("tests/test_data/testLookUp.tsv"));
+    Matrix mat = MatrixIO::loadMatrixFromTSV("tests/test_data/testLookUp.tsv");
 
 
-    double score = scoreNeuronPair(lut, query, target, doCosine);
+    double score = scoreNeuronPair(mat, query, target, doCosine);
 
     // NaN check
     REQUIRE(score == score);
 
     // Optional: self-score
-    double selfScore = scoreNeuronPair(lut, query, query, doCosine);
+    double selfScore = scoreNeuronPair(mat, query, query, doCosine);
 
     REQUIRE(selfScore == selfScore);
 }

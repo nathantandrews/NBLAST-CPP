@@ -1,11 +1,10 @@
 #include "ArgParse.hpp"
 #include "Point.hpp"
-#include "Utils.hpp"
+#include "StringUtils.hpp"
 #include "FileIO.hpp"
 #include "Error.hpp"
 #include "nanoflann.hpp"
-#include "LookUpTable.hpp"
-#include "Debug.hpp"
+#include "Matrix.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -25,13 +24,12 @@
 #include <cassert>
 
 static PointVector buildMidpoints(const PointVector& pts) {
-    debug("buildMidpoints\n");
     PointVector mp;
     mp.reserve(pts.size());
 
     for (const auto& pt : pts) {
         if (pt.parent == -1) continue;
-        Point m = pt.computeMidpoint(pts[pt.parent]);
+        Point m = pt.midpoint(pts[pt.parent]);
 
         // midpoint: id = original id, parent = -1
         mp.emplace_back(pt.id, m.x, m.y, m.z, -1);
@@ -44,7 +42,6 @@ PAVector nearestNeighborKDTree(const PointVector& query,
                                const PointVector& target, 
                                bool doSine, 
                                bool doPrint) {
-    debug("nearestNeighborKDTree\n");
     // Build midpoints for query / target
     PointVector queryMidpoints  = buildMidpoints(query);
     PointVector targetMidpoints = buildMidpoints(target);
@@ -88,7 +85,7 @@ PAVector nearestNeighborKDTree(const PointVector& query,
         Point s_i = tj - ti;
 
         // angle measure
-        double angleMeasure = r_i.computeAngleMeasure(s_i, doSine);
+        double angleMeasure = r_i.angleMeasure(s_i, doSine);
 
         // output: id_i id_j distance angle
         PointAlignment pc{ qi.id, ti.id, std::sqrt(outDistanceSqr), angleMeasure };
@@ -97,6 +94,10 @@ PAVector nearestNeighborKDTree(const PointVector& query,
             pc.printDifference(std::cout);
         }
     }
+    // remove first two elements (no midpoints at those ids)
+    if (matchVector.size() >= 2) {
+        matchVector.erase(matchVector.begin(), matchVector.begin() + 2);
+    }
     return matchVector;
 }
 
@@ -104,7 +105,6 @@ PAVector nearestNeighborNaive(const PointVector& query,
                               const PointVector& target, 
                               bool doSine, 
                               bool doPrint) {
-    debug("nearestNeighborNaive\n");
     PAVector matchVector(query.size());
     for (const auto& query_i : query) {
         if (query_i.parent == POINT_DEFAULT_PARENT) continue;
@@ -123,13 +123,13 @@ PAVector nearestNeighborNaive(const PointVector& query,
             Point s_i = target_j - target_i;
             Point o_i = target_i + 0.5 * s_i;
 
-            double distance_i = m_i.computeDistance(o_i);
+            double distance_i = m_i.distance(o_i);
             
             if (distance_i < distance_min) {
                 target_min = target_i;
                 distance_min = distance_i;
 
-                double angle_diff_tmp = r_i.computeAngleMeasure(s_i, doSine);
+                double angle_diff_tmp = r_i.angleMeasure(s_i, doSine);
                 if (angle_diff_tmp == -1) continue;
                 angle_diff = angle_diff_tmp;
             }
@@ -143,18 +143,16 @@ PAVector nearestNeighborNaive(const PointVector& query,
     return matchVector;
 }
 
-static void computeRawScores(const LookUpTable& lut, PAVector& matchVector) {
-    debug("computeRawScores\n");
+static void computeRawScores(const Matrix& mat, PAVector& matchVector) {
     for (auto& pm : matchVector) {
         if (pm.queryPointID == -1 || pm.targetPointID == -1) {
             continue;
         }
-        pm.computeRawScore(lut);
+        pm.computeRawScore(mat);
     }
 }
 
 static double sumRawScores(PAVector vec) {
-    debug("sumRawScores\n");
     double res = 0;
     for (const auto& elem : vec) {
         res += elem.score;
@@ -162,33 +160,31 @@ static double sumRawScores(PAVector vec) {
     return res;
 }
 
-double scoreNeuronPair(const LookUpTable& lut, 
+double scoreNeuronPair(const Matrix& mat, 
                        const PointVector& queryVector, 
                        const PointVector& targetVector, 
                        bool doSine) {
-    debug("scoreNeuronPair\n");
     // compute forward score
     PAVector forwardMatchVector = nearestNeighborKDTree(queryVector, targetVector, doSine, false);
-    computeRawScores(lut, forwardMatchVector);
+    computeRawScores(mat, forwardMatchVector);
     double forwardTotalScore = sumRawScores(forwardMatchVector);
 
     // compute forward self score
     PAVector forwardSelfMatchVector = nearestNeighborKDTree(queryVector, queryVector, doSine, false);
-    computeRawScores(lut, forwardSelfMatchVector);
+    computeRawScores(mat, forwardSelfMatchVector);
     double forwardSelfTotalScore = sumRawScores(forwardSelfMatchVector);
 
     // compute reverse score
     PAVector reverseMatchVector = nearestNeighborKDTree(targetVector, queryVector, doSine, false);
-    computeRawScores(lut, reverseMatchVector);
+    computeRawScores(mat, reverseMatchVector);
     double reverseTotalScore = sumRawScores(reverseMatchVector);
 
     // compute reverse self score
     PAVector reverseSelfMatchVector = nearestNeighborKDTree(targetVector, targetVector, doSine, false);
-    computeRawScores(lut, reverseSelfMatchVector);
+    computeRawScores(mat, reverseSelfMatchVector);
     double reverseSelfTotalScore = sumRawScores(reverseSelfMatchVector);
     
     // normalize forward and reverse by self
     // then average for final score
-    debug("fts: %f\nfsts: %f\nrts: %f\nrsts: %f\n", forwardTotalScore, forwardSelfTotalScore, reverseTotalScore, reverseSelfTotalScore);
     return ((forwardTotalScore / forwardSelfTotalScore) + (reverseTotalScore / reverseSelfTotalScore)) / 2;
 }

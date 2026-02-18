@@ -1,7 +1,8 @@
 #include "FileIO.hpp"
 #include "Point.hpp"
 #include "Error.hpp"
-#include "Utils.hpp"
+#include "Matrix.hpp"
+
 #include "Logging.hpp"
 
 #include <fstream>
@@ -10,12 +11,29 @@
 #include <limits>
 #include <vector>
 
-int loadPoints(const std::string& filepath, PointVector& vec) {
+uint64_t computeLineCount(std::ifstream& fin) {
+    fin.seekg(0, std::ios::beg);
+    const size_t bufferSize = 1 << 20;
+    std::vector<char> buffer(bufferSize);
+    unsigned lineCount = 0;
+    while (fin) {
+        fin.read(buffer.data(), buffer.size());
+        std::streamsize bytes_read = fin.gcount();
+        for (std::streamsize i = 0; i < bytes_read; ++i) {
+            if (buffer[i] == '\n') ++lineCount;
+        }
+    }
+    fin.clear();
+    fin.seekg(0, std::ios::beg);
+    return lineCount + 1;
+}
+
+PointVector loadPoints(const std::string& filepath) {
     std::ifstream fin{filepath};
-    if (!fin) { return -1; }
-    
+    if (!fin) { throw std::runtime_error("Cannot open " + filepath); }
+    PointVector vec;
     int pointCount = computeLineCount(fin);
-    LOG_DEBUG("pointCount: %d\n", pointCount);
+    LOG_DEBUG("pointCount: %d", pointCount);
     vec.resize(pointCount);
 
     std::string line;
@@ -30,71 +48,7 @@ int loadPoints(const std::string& filepath, PointVector& vec) {
         vec[id] = p;
     }
     fin.close();
-    return 0;
-}
-int pMatrixFromFile(const std::string& filepath, DoubleVector2D& matrix) {
-    std::ifstream fin{filepath, std::ios::in};
-    if (!fin) { fileOpeningError(filepath); }
-    std::string line, ignore;
-    std::istringstream sin;
-    double distance, theta;
-    int scaled_dist, scaled_ang;
-    std::getline(fin, ignore); // first line is the two filenames
-    while (std::getline(fin, line)) {
-        sin.clear();
-        sin.str(line);
-        // sin >> ignore >> ignore;
-        // if (sin.fail()) continue;
-        sin >> distance >> theta;
-        scaled_dist = (int) (sqrt(distance));
-        scaled_ang = (int) (sqrt(MATRIX_THETA_SCALING_FACTOR * theta));
-        ++matrix[scaled_dist][scaled_ang];
-        sin.str("");
-    }
-    countsToPValueMatrix(matrix);
-    return 0;
-}
-
-int readMatrix(const std::string& filepath, DoubleVector2D& matrix) {
-    std::ifstream fin{filepath, std::ios::in};
-    if (!fin) {
-        std::cerr << "Error: Cannot open stream with filepath: '" 
-            << filepath << "'." << std::endl;
-        return -1;
-    }
-    std::string str;
-    while (fin >> str) {
-        if (str == "#") {
-            fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        } else {
-            break;
-        }
-    }
-    matrix[0][0] = std::stoi(str);
-    for (size_t i = 0; i < matrix.size(); ++i) {
-        for (size_t j = 0; j < matrix[i].size(); ++j) {
-            fin >> matrix[i][j];
-        }
-    }
-    return 0;
-}
-
-// @todo actually print out some useful info about the matrix.
-void printMatrixHeader(size_t matrix_i_size, size_t matrix_j_size) {
-    printf("# %lu x %lu P-Value Matrix!\n", matrix_i_size, matrix_j_size);
-}
-
-void printMatrix(std::ofstream& out, const DoubleVector2D& matrix) {
-    printMatrixHeader(matrix.size(), matrix[0].size());
-    for (size_t i = 0; i < matrix.size(); ++i) {
-        for (size_t j = 0; j < matrix[i].size(); ++j) {
-            out << matrix[i][j];
-            if (j < matrix[i].size() - 1) {
-                out << " ";
-            }
-        }
-        out << "\n";
-    }
+    return vec;
 }
 
 void ensureDirectory(const std::string& filepath) {
@@ -106,32 +60,32 @@ void ensureDirectory(const std::string& filepath) {
     }
 }
 
-int getDatasetFilepaths(const std::string& filepath, std::vector<std::string>& pathVector) {
+StringVector getDatasetFilepaths(const std::string& filepath) {
     namespace fs = std::filesystem;
-
+    std::vector<std::string> pathVector;
     for (auto const& dir_entry : fs::directory_iterator{filepath}) {
         pathVector.push_back(dir_entry.path().string());
     }
-    return 0;
+    return pathVector;
 }
 
-int getKnownMatchesFilepaths(const std::string& filepath, 
-                    std::vector<std::string>& queryVector, 
-                    std::vector<std::string>& targetVector) {
+StringVectorPair getKnownMatchesFilepaths(const std::string& filepath) {
+    StringVectorPair vecPair;
     std::ifstream fin{filepath, std::ios::in};
-    if (!fin) { fileOpeningError(filepath); }
-    std::string line, ignore;
+    if (!fin) { throw std::runtime_error("Cannot open " + filepath); }
+    std::string line, ignore, query, target;
     std::istringstream sin;
-    std::string query, target;
-    std::getline(fin, ignore);
+    std::getline(fin, ignore); // ignore header
     while (std::getline(fin, line)) {
         sin.clear();
         sin.str(line);
         sin >> query >> target;
-        if (sin.fail()) return -1;
-        queryVector.push_back(query);
-        targetVector.push_back(target);
+        if (sin.fail()) throw std::runtime_error("Malformed line in " + filepath + ": " + line);
+        vecPair.first.push_back(query);
+        vecPair.second.push_back(target);
         sin.str("");
     }
-    return 0;
+    return vecPair;
 }
+
+

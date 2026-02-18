@@ -1,7 +1,7 @@
 #ifndef SCORING_HPP
 #define SCORING_HPP
 
-#include "LookUpTable.hpp"
+#include "Matrix.hpp"
 #include "Point.hpp"
 
 PAVector nearestNeighborKDTree(const PointVector& query, 
@@ -12,7 +12,7 @@ PAVector nearestNeighborNaive(const PointVector& query,
                               const PointVector& target, 
                               bool doCosine, 
                               bool doPrint);
-double scoreNeuronPair(const LookUpTable& lut, 
+double scoreNeuronPair(const Matrix& mat, 
                        const PointVector& queryVector, 
                        const PointVector& targetVector, 
                        bool doCosine);

@@ -1,11 +1,11 @@
 #include "ArgParse.hpp"
-#include "LookUpTable.hpp"
+#include "Matrix.hpp"
+#include "MatrixIO.hpp"
 #include "Error.hpp"
-#include "Utils.hpp"
 #include "FileIO.hpp"
 #include "Scoring.hpp"
-#include "Debug.hpp"
 #include "Logging.hpp"
+#include "StringUtils.hpp"
 
 #include <iostream>
 #include <cassert>
@@ -21,103 +21,73 @@ int main(int argc, char *argv[]) {
     
     Args a;
     a.parse(argc, argv);
-    int rc;
     switch (a.mode) {
         case option_t::Query: {
-            if (a.matrixFilepath.empty()) { 
-                filepathEmptyError("Scoring Matrix");
-            }
-
             LOG_INFO("Using Scoring Matrix: \"%s\"", a.matrixFilepath.c_str());
 
-            LookUpTable lut;
-            lut.loadFromTSV(a.matrixFilepath);
+            Matrix mat = MatrixIO::loadMatrixFromTSV(a.matrixFilepath);
 
-            std::string queryFilepath = argv[a.optind];
-            std::string strippedQuery = basenameNoExt(queryFilepath);
+            std::string queryFilepath = a.queryDatasetFilepath + "/" + argv[a.optind] + ".swc";
+            std::string strippedQuery;
+            basenameNoExt(queryFilepath, strippedQuery);
 
             LOG_DEBUG("Query Filepath: \"%s\"", queryFilepath.c_str());
-            LOG_INFO("Query: \"%s\"", strippedQuery.c_str());
 
-            PointVector queryVector;
-            rc = loadPoints(queryFilepath, queryVector);
-            if (rc) {
-                    LOG_ERROR("Failed to load points from \"%s\"; exiting...", queryFilepath.c_str());
-                    exit(EXIT_FAILURE);
-            }
-
-            ensureDirectory("out");
-            std::ofstream outfile("out/query-results.tsv");
-            std::ostream& out = outfile;
+            PointVector queryVector = loadPoints(queryFilepath);
 
             for(int i = a.optind + 1; i < argc; i++) {
-                std::string targetFilepath = argv[i];
-                std::string strippedTarget = basenameNoExt(targetFilepath);
+                std::string targetFilepath = a.targetDatasetFilepath + "/" + argv[i] + ".swc";
+                std::string strippedTarget;
+                basenameNoExt(targetFilepath, strippedTarget);
                 
                 LOG_DEBUG("Target Filepath: \"%s\"", targetFilepath.c_str());
-                LOG_INFO("Target: \"%s\"", strippedTarget.c_str());
                 
-                PointVector targetVector;
-                rc = loadPoints(targetFilepath, targetVector);
-                if (rc) { 
-                    LOG_WARN("Failed to load points from \"%s\"; continuing...", targetFilepath.c_str());
-                    continue; 
-                }
+                PointVector targetVector = loadPoints(targetFilepath);
                 
-                double score = scoreNeuronPair(lut, 
+                double score = scoreNeuronPair(mat, 
                                                queryVector, 
                                                targetVector, 
                                                a.doSine);
-                out << strippedQuery << "\t" 
+                std::cout << strippedQuery << "\t" 
                     << strippedTarget << "\t" 
                     << score << "\n";
             }
-            out.flush();
+            std::cout.flush();
             return 0;
         }
         // generate a matrix for a given dataset, print it to stdout
-        case option_t::GenerateECDF: {
+        case option_t::GenerateScoringMatrix: {
 #ifdef DEBUG
             srand48(1234); // seed the random number generator
 #else            
             srand48(time(0) + getpid()); // seed the random number generator
 #endif
             LOG_DEBUG("creating output directory");
+            
+            // ensures directory out is there once (don't have to do again)
             ensureDirectory("out/known-matches-data.tsv");
-            std::ofstream knownMatchesOutfile("out/known-matches-data.tsv");
-            std::ostream& kout = knownMatchesOutfile;
-            ensureDirectory("out/random-matches-data.tsv");
-            std::ofstream randomMatchesOutfile("out/random-matches-data.tsv");
-            std::ostream& rout = randomMatchesOutfile;
-
-            if (a.queryDatasetFilepath.empty()) {
-                filepathEmptyError("Query Dataset");
-            } else if (a.targetDatasetFilepath.empty()) {
-                filepathEmptyError("Target Dataset");
-            }
+            // std::ofstream kout("out/known-matches-data.tsv");
+            // std::ofstream rout("out/random-matches-data.tsv");
 
             LOG_DEBUG("grabbing swc filepaths for query dataset...");
-            std::vector<std::string> queryDataFilepaths;
-            getDatasetFilepaths(a.queryDatasetFilepath, queryDataFilepaths);
-            std::size_t queryDataLen = queryDataFilepaths.size();
-            LOG_DEBUG("query dataset size: %d", queryDataLen);
-
+            StringVector queryFilepaths = getDatasetFilepaths(a.queryDatasetFilepath);
+            std::size_t queryFilepathsLen = queryFilepaths.size();
+            LOG_DEBUG("query dataset size: %d", queryFilepathsLen);
             LOG_DEBUG("grabbing swc filepaths for target dataset...");
-            std::vector<std::string> targetDataFilepaths;
-            getDatasetFilepaths(a.targetDatasetFilepath, targetDataFilepaths);
-            std::size_t targetDataLen = targetDataFilepaths.size();
-            LOG_DEBUG("target dataset size: %d", targetDataLen);
+            StringVector targetFilepaths = getDatasetFilepaths(a.targetDatasetFilepath);
+            std::size_t targetFilepathsLen = targetFilepaths.size();
+            LOG_DEBUG("target dataset size: %d", targetFilepathsLen);
 
-            std::vector<std::string> knownMatchesQueryVector;
-            std::vector<std::string> knownMatchesTargetVector;
             LOG_DEBUG("getting known matches filepaths from %s", a.knownMatchesFilepath.c_str());
-            getKnownMatchesFilepaths(a.knownMatchesFilepath, knownMatchesQueryVector, knownMatchesTargetVector);
+            const auto [knownMatchesQueryVector, knownMatchesTargetVector] = getKnownMatchesFilepaths(a.knownMatchesFilepath);
             std::size_t knownMatchesQueryLen = knownMatchesQueryVector.size();
             std::size_t knownMatchesTargetLen = knownMatchesQueryVector.size();
             LOG_DEBUG("known matches: query size = %d, target size = %d", knownMatchesQueryLen, knownMatchesTargetLen);
 
             std::string queryFilepath, targetFilepath;
             PointVector queryVector, targetVector;
+            Matrix knownMatrix(DISTANCE_BINS, ANGLE_BINS);
+            Matrix randomMatrix(DISTANCE_BINS, ANGLE_BINS);
             while(a.numGeneratorIterations > 0) {
                 LOG_DEBUG("iterations left %d", a.numGeneratorIterations);
                 --a.numGeneratorIterations;
@@ -129,122 +99,87 @@ int main(int argc, char *argv[]) {
                 queryFilepath = knownMatchesQueryVector[k];
                 LOG_DEBUG("query: %s.swc", queryFilepath.c_str());
                 queryVector.clear();
-                rc = loadPoints(a.queryDatasetFilepath + "/" + queryFilepath + ".swc", queryVector);
-                if (rc == -1) continue;
+                queryVector = std::move(loadPoints(a.queryDatasetFilepath + "/" + queryFilepath + ".swc"));
 
                 targetFilepath = knownMatchesTargetVector[l];
                 LOG_DEBUG("target: %s.swc", targetFilepath.c_str());
                 targetVector.clear();
-                rc = loadPoints(a.targetDatasetFilepath + "/" + targetFilepath + ".swc", targetVector);
-                if (rc == -1) continue;
+                targetVector = std::move(loadPoints(a.targetDatasetFilepath + "/" + targetFilepath + ".swc"));
 
-                kout << basenameNoExt(queryFilepath) << "\t" << basenameNoExt(targetFilepath) << "\n";
+                std::string strippedQuery, strippedTarget; 
+                basenameNoExt(queryFilepath, strippedQuery);
+                basenameNoExt(targetFilepath, strippedTarget);
+                // kout << strippedQuery << "\t" << strippedTarget << "\n";
                 PAVector knownMatchVector = nearestNeighborKDTree(queryVector, targetVector, a.doSine, false);
                 for (const auto& match : knownMatchVector) {
-                    kout << match.distance << "\t" << match.angleMeasure << "\n";
+                    // kout << match.distance << "\t" << match.angleMeasure << "\n";
+                    knownMatrix.increment(match.distance, match.angleMeasure);
                 }
 
                 // random matches
                 LOG_DEBUG("starting random match");
-                uint64_t i = queryDataLen * drand48();
-                uint64_t j = targetDataLen * drand48();
+                uint64_t i = queryFilepathsLen * drand48();
+                uint64_t j = targetFilepathsLen * drand48();
 
-                queryFilepath = queryDataFilepaths[i];
+                queryFilepath = queryFilepaths[i];
                 LOG_DEBUG("query: %s", queryFilepath.c_str());
                 queryVector.clear();
-                rc = loadPoints(queryFilepath, queryVector);
-                if (rc == -1) continue;
+                try {
+                    queryVector = std::move(loadPoints(queryFilepath));
+                } catch (...) {}
 
-                targetFilepath = targetDataFilepaths[j];
+                targetFilepath = targetFilepaths[j];
                 LOG_DEBUG("target: %s", targetFilepath.c_str());
                 targetVector.clear();
-                rc = loadPoints(targetFilepath, targetVector);
-                if (rc == -1) continue;
+                try {
+                    targetVector = std::move(loadPoints(targetFilepath));
+                } catch (...) {}
 
                 // rout << basenameNoExt(queryFilepath) << "\t" << basenameNoExt(targetFilepath) << "\n";
                 PAVector randomMatchVector = nearestNeighborKDTree(queryVector, targetVector, a.doSine, false);
                 for (const auto& match : randomMatchVector) {
-                    rout << match.distance << "\t" << match.angleMeasure << "\n";
+                    // rout << match.distance << "\t" << match.angleMeasure << "\n";
+                    randomMatrix.increment(match.distance, match.angleMeasure);
                 }
             }
-            kout.flush();
-            rout.flush();
+            // kout.flush();
+            // rout.flush();
 
-            DoubleVector2D knownMatrix(1000, DoubleVector(1000, 0.0));
-            rc = pMatrixFromFile("out/known-matches-data.tsv", knownMatrix);
-            if (rc) {
-                LOG_ERROR("Error when binning known matches data");
-            }
+            // Matrix knownMatrix = MatrixIO::buildCountsMatrixFromFile("out/known-matches-data.tsv");
             
-            ensureDirectory("out/knownBinned.txt");
-            std::ofstream knownBinned("out/knownBinned.txt");
-            printMatrix(knownBinned, knownMatrix);
+            std::ofstream kcout("out/knownCounts.tsv");
+            kcout << knownMatrix;
+            kcout.close();
+                        
+            knownMatrix.prefixSum();
+            knownMatrix.toECDF();
+            std::ofstream keout("out/knownECDF.txt");
+            keout << knownMatrix;
+            keout.close();
+
+            // Matrix randomMatrix = MatrixIO::buildCountsMatrixFromFile("out/random-matches-data.tsv");
+
+            std::ofstream rcout("out/randomCounts.tsv");
+            rcout << randomMatrix;
+            rcout.close();
             
-            rc = countsToPValueMatrix(knownMatrix);
-            if (rc) {
-                LOG_ERROR("Error when converting to p values in known matches matrix");
-            }
-            
-            ensureDirectory("out/knownPValues.txt");
-            std::ofstream knownPValues("out/knownPValues.txt");
-            printMatrix(knownPValues, knownMatrix);
-            
-            DoubleVector2D randomMatrix(1000, DoubleVector(1000, 0.0));
-            rc = pMatrixFromFile("out/random-matches-data.tsv", randomMatrix);
-            if (rc) {
-                LOG_ERROR("Error when binning random matches data");
-            }
+            randomMatrix.prefixSum();
+            randomMatrix.toECDF();
+            std::ofstream reout("out/randomECDF.txt");
+            reout << randomMatrix;
+            reout.close();
 
-            ensureDirectory("out/randomBinned.txt");
-            std::ofstream randomBinned("out/randomBinned.txt");
-            printMatrix(randomBinned, knownMatrix);
-
-            rc = countsToPValueMatrix(randomMatrix);
-            if (rc) {
-                LOG_ERROR("Error when converting to p values in random matches matrix");
-            }
-
-            ensureDirectory("out/randomPValues.txt");
-            std::ofstream randomPValues("out/randomPValues.txt");
-            printMatrix(randomPValues, knownMatrix);
-
-            DoubleVector2D eCDF(1000, DoubleVector(1000, 0.0));
-            for (size_t i = 0; i < 1000; ++i) {
-                for (size_t j = 0; j < 1000; ++j) {
-                    eCDF[i][j] = std::log2(knownMatrix[i][j] / randomMatrix[i][j] + 0.00000000001);
+            Matrix logLikelihoodMatrix(DISTANCE_BINS, ANGLE_BINS);
+            const double epsilon = 1e-12;
+            for (size_t i = 0; i < logLikelihoodMatrix.getTable().size(); ++i) {
+                for (size_t j = 0; j < logLikelihoodMatrix.getTable()[i].size(); ++j) {
+                    logLikelihoodMatrix.getTable()[i][j] = std::log2(knownMatrix.getTable()[i][j] / randomMatrix.getTable()[i][j] + epsilon);
                 }
             }
-            ensureDirectory("out/matrix.txt");
-            std::ofstream matrixFile("out/matrix.txt");
-            printMatrix(matrixFile, eCDF);
+            std::ofstream mout("out/matrix.tsv");
+            mout << logLikelihoodMatrix;
             return 0;
         }
-        // first step in generating the matrix
-        // randomly selects pairs of .swc files,
-        // and outputs nearest neighbor calculations to stdout
-        case option_t::Random: {
-            uint64_t n = argc - a.optind; // number of input SWC files, from which random pairs will be chosen
-            std::string queryFilepath, targetFilepath;
-            srand48(time(0) + getpid()); // seed the random number generator
-            while(a.numGeneratorIterations > 0) {
-                uint64_t i = a.optind + n * drand48(), j = a.optind + n * drand48();
-
-                queryFilepath = argv[i];
-                PointVector queryVector;
-                rc = loadPoints(queryFilepath, queryVector);
-                if (rc == -1) continue;
-
-                targetFilepath = argv[j];
-                PointVector targetVector;
-                rc = loadPoints(targetFilepath, targetVector);
-                if (rc == -1) continue;
-
-                std::cout << basenameNoExt(queryFilepath) << " " << basenameNoExt(targetFilepath) << "\n";
-                PAVector matchVector = nearestNeighborKDTree(queryVector, targetVector, a.doSine, true);
-            }
-            return 0;
-        }
-        // in case something went wrong in argument parsing
-        default: { invalidArgumentError(optToString(a.mode)); return -1; }
+        default: { throw std::runtime_error("uncaught argument parsing error, invalid mode"); }
     }
 }

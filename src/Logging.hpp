@@ -78,14 +78,12 @@ inline void openLogFile(const std::string& prefix = "log/run") {
 inline void logPrintf(LogLevel lvl, const char* fmt, ...) {
     if (lvl < getLoggerConfig().level) return;
 
-    // format message
     char msgbuf[2048];
     va_list args;
     va_start(args, fmt);
     vsnprintf(msgbuf, sizeof(msgbuf), fmt, args);
     va_end(args);
 
-    // timestamp
     char timebuf[32] = "";
     if (getLoggerConfig().showTimestamps) {
         std::time_t t = std::time(nullptr);
@@ -95,20 +93,13 @@ inline void logPrintf(LogLevel lvl, const char* fmt, ...) {
     }
 
     auto write = [&](std::ostream& os) {
-        if (getLoggerConfig().showTimestamps) {
-            os << timebuf << " ";
-        }
-        os << "[" << levelToString(lvl) << "] "
-           << msgbuf << "\n";
+        if (getLoggerConfig().showTimestamps) os << timebuf << " ";
+        os << "[" << levelToString(lvl) << "] " << msgbuf << "\n";
         os.flush();
     };
 
-    write(std::cerr);
-
     auto& f = getLogFile();
-    if (f.is_open()) {
-        write(f);
-    }
+    if (f.is_open()) write(f);
 }
 
 #define LOG_DEBUG(fmt, ...) logPrintf(LogLevel::debug, fmt, ##__VA_ARGS__)

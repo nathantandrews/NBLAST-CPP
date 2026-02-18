@@ -8,7 +8,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include "LookUpTable.hpp"
+#include "Matrix.hpp"
 
 using DoubleVector = std::vector<double>;
 using DoubleVector2D = std::vector<DoubleVector>;
@@ -31,9 +31,9 @@ struct Point {
 
     double magnitude(void) const;
 
-    Point computeMidpoint(const Point& other) const;
-    double computeDistance(const Point& other) const;
-    double computeAngleMeasure(const Point& other, bool do_cosine) const;
+    Point midpoint(const Point& other) const;
+    double distance(const Point& other) const;
+    double angleMeasure(const Point& other, bool do_cosine) const;
 
     Point& operator=(const Point& other);
 
@@ -71,7 +71,7 @@ struct PointAlignment {
         angleMeasure(other.angleMeasure),
         score(other.score) {}
 
-    void computeRawScore(const LookUpTable& lut);
+    void computeRawScore(const Matrix& mat);
 
     void printDifference(std::ostream& out, const std::string& tag = "") const;
     void printScore(std::ostream& out) const;

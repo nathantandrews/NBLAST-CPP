@@ -1,5 +1,5 @@
 #include "Point.hpp"
-#include "Utils.hpp"
+
 
 #include <vector>
 #include <string>
@@ -21,13 +21,13 @@ void Point::parse(std::string line) {
 double Point::magnitude(void) const {
     return std::sqrt(this->x * this->x + this->y * this->y + this->z * this->z);
 }
-Point Point::computeMidpoint(const Point& other) const {
+Point Point::midpoint(const Point& other) const {
     return *this + 0.5 * (other - *this);
 }
-double Point::computeDistance(const Point& other) const {
+double Point::distance(const Point& other) const {
     return (*this - other).magnitude();
 }
-double Point::computeAngleMeasure(const Point& other, bool do_sine) const {
+double Point::angleMeasure(const Point& other, bool do_sine) const {
     double selfMagnitude = this->magnitude();
     double otherMagnitude = other.magnitude();
     if (selfMagnitude == 0 || otherMagnitude == 0) return -1;
@@ -74,12 +74,12 @@ Point operator*(double lhs, const Point& rhs) {
 }
 
 // ================= PointAlignment Definitions =================
-void PointAlignment::computeRawScore(const LookUpTable& lut) {
+void PointAlignment::computeRawScore(const Matrix& mat) {
     if (distance < 0 || angleMeasure < 0) {
         std::cerr << "Invalid distance or angleMeasure\n";
         exit(EXIT_FAILURE);
     }
-    this->score = lut.lookUp(distance, angleMeasure);
+    this->score = mat.score(distance, angleMeasure);
 }
 void PointAlignment::printDifference(std::ostream& out, const std::string& tag) const {
     if (tag.size()) {
