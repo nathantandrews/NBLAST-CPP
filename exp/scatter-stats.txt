@@ -1,0 +1,4 @@
+Matched pairs: 42194
+Pearson r:  0.1254
+Spearman ρ: 0.1310
+Scatter plot saved to: exp/scatter-comparison.png

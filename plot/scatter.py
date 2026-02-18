@@ -1,69 +1,125 @@
 import os
+import sys
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-SCORE_COUNT = 1000
 
-def load_scores(filename: str, score_col: int) -> list[float]:
-    scores: list[float] = []
+def load_scores(filename: str) -> dict[tuple[str, str], float]:
+    """
+    Loads a TSV/space-separated file with columns:
+    query target score
+
+    Returns:
+        dict[(query, target)] = score
+    """
+    scores = {}
+
     with open(filename, "r") as f:
-        next(f)
-        i = 0
+        header = f.readline().strip().split()
+
+        # Try to find score column automatically
+        try:
+            score_idx = header.index("score")
+        except ValueError:
+            score_idx = 2  # fallback: third column
+
         for line in f:
-            if i > SCORE_COUNT:
-                return scores
-            line = line.rstrip("\n")
-            if not line:
+            if not line.strip():
                 continue
-            fields = line.split()
+
+            fields = line.strip().split()
+            if len(fields) <= score_idx:
+                continue
+
+            query = fields[0]
+            target = fields[1]
+
             try:
-                scores.append(float(fields[score_col - 1]))
-            except (IndexError, ValueError):
-                print("invalid index: ", score_col, line, file="scatter.err")
-            i += 1
+                score = float(fields[score_idx])
+                scores[(query, target)] = score
+            except ValueError:
+                continue
+
     return scores
 
+def spearman_corr(x, y):
+    """Compute Spearman correlation without scipy."""
+    rx = np.argsort(np.argsort(x))
+    ry = np.argsort(np.argsort(y))
+    return np.corrcoef(rx, ry)[0, 1]
+
 def main():
-    output_dir = os.path.join(os.path.dirname(__file__), "output")
-    os.makedirs(output_dir, exist_ok=True)
+    parser = argparse.ArgumentParser(
+        description="Compare two score files and generate scatter plot"
+    )
+    parser.add_argument("file1", help="First score file")
+    parser.add_argument("file2", help="Second score file")
+    parser.add_argument("--label1", default="Known", help="Label for first file")
+    parser.add_argument("--label2", default="Experimental", help="Label for second file")
+    parser.add_argument("--out", default="scatter_plot.png", help="Output filename")
 
-    x = load_scores("banc-fafb-simple.tsv", 4)
-    y = load_scores("fafb-to-banc.txt", 3)
+    args = parser.parse_args()
 
+    scores1 = load_scores(args.file1)
+    scores2 = load_scores(args.file2)
+
+    # Match only shared (query, target)
+    common_keys = sorted(set(scores1.keys()) & set(scores2.keys()))
+
+    if not common_keys:
+        print("No overlapping (query, target) pairs found.")
+        sys.exit(1)
+
+    x = np.array([scores1[k] for k in common_keys])
+    y = np.array([scores2[k] for k in common_keys])
+
+    # Statistics
     mean_x, mean_y = np.mean(x), np.mean(y)
     std_x, std_y = np.std(x), np.std(y)
-    correlation = np.corrcoef(x, y)[0, 1]
+    pearson = np.corrcoef(x, y)[0, 1]
+    spearman = spearman_corr(x, y)
 
+    print(f"Matched pairs: {len(common_keys)}")
+    print(f"Pearson r:  {pearson:.4f}")
+    print(f"Spearman ρ: {spearman:.4f}")
+
+    # Plot
     plt.figure(figsize=(8, 8))
-    plt.scatter(x, y, s=10, alpha=0.6, label="Points")
+    plt.scatter(x, y, s=8, alpha=0.5)
 
-    line = np.linspace(0.9, 1.0, 100)
-    plt.plot(line, line, color="red", linewidth=2, label="y = x")
+    # Diagonal reference line
+    min_val = min(x.min(), y.min())
+    max_val = max(x.max(), y.max())
+    plt.plot([min_val, max_val], [min_val, max_val], linestyle="--")
 
-    # Add labels and stats text
-    plt.xlabel("NBLAST")
-    plt.ylabel("NBLAST++")
-    plt.title("NBLAST++ Scores against Original NBLAST")
+    plt.xlabel(args.label1)
+    plt.ylabel(args.label2)
+    plt.title("Score Comparison")
 
     stats_text = (
+        f"Pairs: {len(common_keys)}\n"
+        f"Pearson r: {pearson:.4f}\n"
+        f"Spearman p: {spearman:.4f}\n"
         f"Mean X: {mean_x:.4f}\n"
-        f"Mean Y: {mean_y:.4f}\n"
-        f"Std X: {std_x:.4f}\n"
-        f"Std Y: {std_y:.4f}\n"
-        f"Correlation: {correlation:.4f}"
+        f"Mean Y: {mean_y:.4f}"
     )
-    plt.text(0.905, 0.905, stats_text, fontsize=10, bbox=dict(facecolor='white', alpha=0.7))
 
-    plt.legend()
+    plt.text(
+        0.05,
+        0.95,
+        stats_text,
+        transform=plt.gca().transAxes,
+        verticalalignment="top",
+        bbox=dict(facecolor="white", alpha=0.7),
+    )
 
-    # Output file path
-    output_file = os.path.join(output_dir, "scatter_plot.png")
-    plt.savefig(output_file, dpi=300)
+    plt.tight_layout()
+    plt.savefig(args.out, dpi=300)
     plt.close()
 
-    print(f"Scatter plot saved to: {output_file}")
+    print(f"Scatter plot saved to: {args.out}")
 
 
 if __name__ == "__main__":
     main()
-

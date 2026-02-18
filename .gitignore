@@ -1,5 +1,7 @@
 # IDE files
 .vscode
+# python venv
+.venv
 # output files
 obj
 # executables
