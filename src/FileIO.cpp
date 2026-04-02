@@ -1,8 +1,9 @@
+#include "ArgParse.hpp"
 #include "FileIO.hpp"
 #include "Point.hpp"
 #include "Error.hpp"
 #include "Matrix.hpp"
-
+#include "StringUtils.hpp"
 #include "Logging.hpp"
 
 #include <fstream>
@@ -69,10 +70,10 @@ StringVector getDatasetFilepaths(const std::string& filepath) {
     return pathVector;
 }
 
-StringVectorPair getKnownMatchesFilepaths(const std::string& filepath) {
+StringVectorPair getKnownMatchesFilepaths(const Args& a) {
     StringVectorPair vecPair;
-    std::ifstream fin{filepath, std::ios::in};
-    if (!fin) { throw std::runtime_error("Cannot open " + filepath); }
+    std::ifstream fin{a.knownMatchesFilepath, std::ios::in};
+    if (!fin) { throw std::runtime_error("Cannot open " + a.knownMatchesFilepath); }
     std::string line, ignore, query, target;
     std::istringstream sin;
     std::getline(fin, ignore); // ignore header
@@ -80,9 +81,9 @@ StringVectorPair getKnownMatchesFilepaths(const std::string& filepath) {
         sin.clear();
         sin.str(line);
         sin >> query >> target;
-        if (sin.fail()) throw std::runtime_error("Malformed line in " + filepath + ": " + line);
-        vecPair.first.push_back(query);
-        vecPair.second.push_back(target);
+        if (sin.fail()) throw std::runtime_error("Malformed line in " + a.knownMatchesFilepath + ": " + line);
+        vecPair.first.push_back(filenameToPath(a.queryDatasetFilepath, query, ".swc"));
+        vecPair.second.push_back(filenameToPath(a.queryDatasetFilepath, target, ".swc"));
         sin.str("");
     }
     return vecPair;

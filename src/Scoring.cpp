@@ -41,7 +41,7 @@ static PointVector buildMidpoints(const PointVector& pts) {
 PAVector nearestNeighborKDTree(const PointVector& query, 
                                const PointVector& target, 
                                bool doSine, 
-                               bool doPrint) {
+                               bool doPrint = false) {
     // Build midpoints for query / target
     PointVector queryMidpoints  = buildMidpoints(query);
     PointVector targetMidpoints = buildMidpoints(target);
@@ -165,22 +165,22 @@ double scoreNeuronPair(const Matrix& mat,
                        const PointVector& targetVector, 
                        bool doSine) {
     // compute forward score
-    PAVector forwardMatchVector = nearestNeighborKDTree(queryVector, targetVector, doSine, false);
+    PAVector forwardMatchVector = nearestNeighborKDTree(queryVector, targetVector, doSine);
     computeRawScores(mat, forwardMatchVector);
     double forwardTotalScore = sumRawScores(forwardMatchVector);
 
     // compute forward self score
-    PAVector forwardSelfMatchVector = nearestNeighborKDTree(queryVector, queryVector, doSine, false);
+    PAVector forwardSelfMatchVector = nearestNeighborKDTree(queryVector, queryVector, doSine);
     computeRawScores(mat, forwardSelfMatchVector);
     double forwardSelfTotalScore = sumRawScores(forwardSelfMatchVector);
 
     // compute reverse score
-    PAVector reverseMatchVector = nearestNeighborKDTree(targetVector, queryVector, doSine, false);
+    PAVector reverseMatchVector = nearestNeighborKDTree(targetVector, queryVector, doSine);
     computeRawScores(mat, reverseMatchVector);
     double reverseTotalScore = sumRawScores(reverseMatchVector);
 
     // compute reverse self score
-    PAVector reverseSelfMatchVector = nearestNeighborKDTree(targetVector, targetVector, doSine, false);
+    PAVector reverseSelfMatchVector = nearestNeighborKDTree(targetVector, targetVector, doSine);
     computeRawScores(mat, reverseSelfMatchVector);
     double reverseSelfTotalScore = sumRawScores(reverseSelfMatchVector);
     

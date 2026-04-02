@@ -39,7 +39,7 @@ TEST_CASE(test_args_parse_query_mode) {
 
     int argc = argv.size() - 1;
     try {
-        args.parse(argc, argv.data());
+        args = parseArgs(argc, argv.data());
     } catch (...) {}
 
     REQUIRE_EQ(args.mode, option_t::Query);
@@ -62,7 +62,7 @@ TEST_CASE(test_args_parse_generate_mode) {
 
     int argc = argv.size() - 1;
 
-    args.parse(argc, argv.data());
+    args = parseArgs(argc, argv.data());
 
     REQUIRE_EQ(args.mode, option_t::GenerateScoringMatrix);
     REQUIRE_EQ(args.knownMatchesFilepath, "known.tsv");
@@ -86,7 +86,7 @@ TEST_CASE(test_args_parse_sine_flag) {
 
     int argc = argv.size() - 1;
 
-    args.parse(argc, argv.data());
+    args = parseArgs(argc, argv.data());
 
     REQUIRE(args.doSine);
 }

@@ -15,11 +15,13 @@ extern int optind;
 
 std::ostream& operator<<(std::ostream& out, option_t op) {
     switch (op) {
-        case option_t::Query: out << 'q'; break;
-        case option_t::GenerateScoringMatrix: out << 'g'; break;
-        case option_t::MatrixSpecified: out << 'm'; break;
+        case option_t::Query: out << "q"; break;
+        case option_t::GenerateScoringMatrix: out << "g"; break;
+        case option_t::MatrixSpecified: out << "m"; break;
+        case option_t::InputDirectoriesSpecified: out << "i"; break;
+        case option_t::DumpIntermediarySteps: out << "d"; break;
         case option_t::DefaultMode: out << "default"; break;
-        default: out << "Unknown"; break;
+        default: out << "unknown"; break;
     }
     return out;
 }
@@ -31,47 +33,50 @@ std::string optToString(option_t m) {
         case option_t::GenerateScoringMatrix: return "g";
         case option_t::MatrixSpecified: return "m";
         case option_t::InputDirectoriesSpecified: return "i";
+        case option_t::DumpIntermediarySteps: return "d";
         case option_t::DefaultMode: return "default";
         default: return "unknown";
     }
 }
 
 std::ostream& operator<<(std::ostream& out, const Args& a) {
-    out << "optind: " << a.optind << '\n'
+    out << "optind: " << optind << '\n'
         << "matrixFilepath: " << a.matrixFilepath << '\n'
         << "knownMatchesFilepath: " << a.knownMatchesFilepath << '\n'
         << "queryDatasetFilepath: " << a.queryDatasetFilepath << '\n'
         << "targetDatasetFilepath: " << a.targetDatasetFilepath << '\n'
         << "mode: " << a.mode << '\n'
         << "numGeneratorIterations: " << a.numGeneratorIterations << '\n'
-        << "doSine: " << a.doSine;
+        << "doSine: " << a.doSine << '\n'
+        << "doDump: " << a.doDump;
     return out;
 }
 
-void Args::setMode(option_t next) {
-    if (mode != option_t::DefaultMode) {
-        throw std::runtime_error("Invalid combination: " + optToString(mode) + " and " + optToString(next));
+void setMode(Args& a, option_t next) {
+    if (a.mode != option_t::DefaultMode) {
+        throw std::runtime_error("Invalid combination: " + optToString(a.mode) + " and " + optToString(next));
     }
-    mode = next;
+    a.mode = next;
 }
 
-int Args::parse(int argc, char *argv[]) {
+Args parseArgs(int argc, char *argv[]) {
     if (argc == 1) {
         printUsage(std::cout);
         exit(EXIT_SUCCESS);
     }
+    Args a;
     int opt = 0;
     bool optIProvided = false;
-    while ((opt = getopt(argc, argv, ":hq:g:i:sl:")) != -1) {
+    while ((opt = getopt(argc, argv, ":hq:g:i:o:sd")) != -1) {
         switch (opt) {
             // print usage
             case 'h': { printUsage(std::cout); exit(EXIT_SUCCESS); }
             // ===== main modes =====
             // query toolchain, compares one query .swc file to one or more target .swc files
             case 'q': {
-                setMode(option_t::Query);
-                matrixFilepath = optarg;
-                if (matrixFilepath.empty()) {
+                setMode(a, option_t::Query);
+                a.matrixFilepath = optarg;
+                if (a.matrixFilepath.empty()) {
                     throw std::runtime_error("matrixFilepath cannot be empty");
                 }
                 break;
@@ -79,7 +84,7 @@ int Args::parse(int argc, char *argv[]) {
             // generator toolchain, generates match and random p-value matrices
             // given .swc files and known matches file
             case 'g': {
-                setMode(option_t::GenerateScoringMatrix);
+                setMode(a, option_t::GenerateScoringMatrix);
 
                 // comma separated arg
                 std::pair<std::string, std::string> res;
@@ -98,8 +103,8 @@ int Args::parse(int argc, char *argv[]) {
                 } else if (rc == -2) {
                     throw std::runtime_error("numGeneratorIterations out of range");
                 }
-                knownMatchesFilepath = res.first;
-                numGeneratorIterations = numItersUint;
+                a.knownMatchesFilepath = res.first;
+                a.numGeneratorIterations = numItersUint;
                 
                 break;
             }
@@ -117,15 +122,17 @@ int Args::parse(int argc, char *argv[]) {
                 } else if (res.second.empty()) {
                     throw std::runtime_error("target dataset filepath empty");
                 }
-                queryDatasetFilepath = res.first;
-                targetDatasetFilepath = res.second;
+                a.queryDatasetFilepath = res.first;
+                a.targetDatasetFilepath = res.second;
                 
                 break;
             }
-            case 's': { doSine = true; break; }
-            // case 'l' {
-            //     break;
-            // }
+            case 'o': {
+                a.matrixOutfile = optarg;
+                break;
+            }
+            case 's': { a.doSine = true; break; }
+            case 'd': { a.doDump = true; break; }
             case ':': {
                 throw std::runtime_error(std::string("option requires an argument -") + static_cast<char>(optopt)); break;
             }
@@ -135,12 +142,14 @@ int Args::parse(int argc, char *argv[]) {
         }
     }
 
-    if (mode == option_t::Query && !optIProvided) {
+    if (a.mode == option_t::Query && !optIProvided) {
         throw std::runtime_error("The -q option requires -i to specify query and target datasets.");
-    } else if (mode == option_t::GenerateScoringMatrix && !optIProvided) {
+    } else if (a.mode == option_t::GenerateScoringMatrix && !optIProvided) {
         throw std::runtime_error("The -g option requires -i to specify query and target datasets.");
     }
+    for (int i = optind; i < argc; ++i) {
+        a.positionalArgs.push_back(argv[i]);
+    }
 
-    this->optind = ::optind;
-    return ::optind;
+    return a;
 }

@@ -45,3 +45,11 @@ int stringToUInt(const std::string& str, uint64_t& res) {
         return -2;
     }
 }
+
+std::string filenameToPath(const std::string& directoryPath, const std::string& filename, const std::string& ext) {
+    if (directoryPath.at(directoryPath.size() - 1) == '/') {
+        return directoryPath + filename + ext;
+    } else {
+        return directoryPath + "/" + filename + ext;
+    }
+}

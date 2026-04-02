@@ -14,7 +14,7 @@ TEST_SRC := $(wildcard tests/*.cpp)
 BUILD ?= release
 
 ifeq ($(BUILD),debug)
-    CXXFLAGS := $(STD) $(WARN) -g -Og -DDEBUG
+    CXXFLAGS := $(STD) $(WARN) -g -Og -DDEBUG -DLOG
     OBJ_DIR := obj/debug
 else
     CXXFLAGS := $(STD) $(WARN) -O2 -DNDEBUG
@@ -30,8 +30,8 @@ $(BUILD_TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # ==================== test runner ====================
-# Exclude main.cpp from tests to avoid multiple mains
-TEST_SRC_FILTERED := $(filter-out src/NBLAST++.cpp,$(SRC)) $(TEST_SRC)
+# Exclude Main.cpp from tests to avoid multiple mains
+TEST_SRC_FILTERED := $(filter-out src/Main.cpp,$(SRC)) $(TEST_SRC)
 
 $(TEST_TARGET): $(TEST_SRC_FILTERED)
 	$(CXX) $(CXXFLAGS) -Isrc -Itests $^ -o $@
@@ -45,10 +45,10 @@ $(OBJ_DIR):
 
 # ==================== build modes ====================
 debug:
-	$(MAKE) BUILD=debug
+	$(MAKE) BUILD=debug -j8
 
 release:
-	$(MAKE) BUILD=release
+	$(MAKE) BUILD=release -j8
 
 # ==================== clean ====================
 clean:
@@ -59,4 +59,4 @@ test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
 # ==================== phony targets ====================
-.PHONY: all debug release clean query test genmatrix
+.PHONY: all debug release clean test

@@ -76,6 +76,9 @@ struct PointAlignment {
     void printDifference(std::ostream& out, const std::string& tag = "") const;
     void printScore(std::ostream& out) const;
     PointAlignment operator=(const PointAlignment& other);
+    bool operator<(const PointAlignment& other) const {
+        return distance < other.distance;
+    }
     
     friend PointAlignment operator+(const PointAlignment& lhs, const PointAlignment& rhs);
 };

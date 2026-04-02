@@ -2,6 +2,7 @@
 #define FILEIO_HPP
 
 #include "Point.hpp"
+#include "ArgParse.hpp"
 
 #include <vector>
 #include <string>
@@ -14,6 +15,6 @@ using StringVector = std::vector<std::string>;
 StringVector getDatasetFilepaths(const std::string& filepath);
 
 using StringVectorPair = std::pair<std::vector<std::string>, std::vector<std::string>>;
-StringVectorPair getKnownMatchesFilepaths(const std::string& filepath);
+StringVectorPair getKnownMatchesFilepaths(const Args& a);
 
 #endif // FILEIO_HPP

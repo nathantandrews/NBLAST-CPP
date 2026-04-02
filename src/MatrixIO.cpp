@@ -50,10 +50,12 @@ namespace MatrixIO {
 
         return m;
     }
-    Matrix buildCountsMatrixFromFile(const std::string& filepath) {
+    Matrix buildCountsMatrixFromFile(const std::string& filepath, 
+                                     const std::vector<double> distanceBins, 
+                                     const std::vector<double> angleBins) {
         std::ifstream fin(filepath);
         if (!fin.is_open()) { throw std::runtime_error("Cannot open " + filepath); }
-        Matrix mat(DISTANCE_BINS, ANGLE_BINS);
+        Matrix mat(distanceBins, angleBins);
         std::string line;
         while (std::getline(fin, line)) {
             const char* ptr = line.c_str();

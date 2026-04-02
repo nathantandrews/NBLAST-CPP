@@ -19,7 +19,11 @@ enum class LogLevel {
 };
 
 struct LoggerConfig {
+#ifdef DEBUG
     LogLevel level = LogLevel::debug;
+#else
+    LogLevel level = LogLevel::info;
+#endif
     bool showTimestamps = true;
     std::string filepath;
 };
@@ -58,23 +62,6 @@ inline std::string makeTimestampedFilename(
     return prefix + "-" + buf + ext;
 }
 
-inline void openLogFile(const std::string& prefix = "log/run") {
-    auto& f = getLogFile();
-    if (f.is_open()) f.close();
-
-    std::string filename = makeTimestampedFilename(prefix);
-
-    ensureDirectory(filename);
-
-    f.open(filename, std::ios::out | std::ios::trunc);
-    if (!f) {
-        std::cerr << "Failed to open log file: " << filename << "\n";
-    }
-
-    getLoggerConfig().filepath = filename;
-}
-
-
 inline void logPrintf(LogLevel lvl, const char* fmt, ...) {
     if (lvl < getLoggerConfig().level) return;
 
@@ -101,15 +88,42 @@ inline void logPrintf(LogLevel lvl, const char* fmt, ...) {
     auto& f = getLogFile();
     if (f.is_open()) write(f);
 }
+inline void openLogFile(const std::string& prefix = "log/run") {
+    auto& f = getLogFile();
+    if (f.is_open()) f.close();
 
+    std::string filename = makeTimestampedFilename(prefix);
+
+    ensureDirectory(filename);
+
+    f.open(filename, std::ios::out | std::ios::trunc);
+    if (!f) {
+        std::cerr << "Failed to open log file: " << filename << "\n";
+    }
+
+    getLoggerConfig().filepath = filename;
+    logPrintf(LogLevel::info, "Logging to %s", getLoggerConfig().filepath.c_str());
+}
+
+#ifdef LOG
+
+#ifdef DEBUG
 #define LOG_DEBUG(fmt, ...) logPrintf(LogLevel::debug, fmt, ##__VA_ARGS__)
+#endif
+
+#undef LOG_INFO
 #define LOG_INFO(fmt, ...)  logPrintf(LogLevel::info,  fmt, ##__VA_ARGS__)
+#undef LOG_WARN
 #define LOG_WARN(fmt, ...)  logPrintf(LogLevel::warn,  fmt, ##__VA_ARGS__)
+#undef LOG_ERROR
 #define LOG_ERROR(fmt, ...) logPrintf(LogLevel::error, fmt, ##__VA_ARGS__)
 
-#ifdef NDEBUG
-#undef LOG_DEBUG
+#else
 #define LOG_DEBUG(...) ((void)0)
+#define LOG_INFO(...) ((void)0)
+#define LOG_WARN(...) ((void)0)
+#define LOG_ERROR(...) ((void)0)
+
 #endif
 
 #endif // LOGGING_HPP

@@ -1,4 +1,5 @@
 #include "Matrix.hpp"
+#include "Logging.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -8,9 +9,12 @@
 void Matrix::increment(double distance, double angle, double value) {
     int row = findDistanceBin(distance);
     int col = findAngleBin(angle);
+    LOG_DEBUG("row: %d column: %d", row, col);
+    LOG_DEBUG("value: %f", value);
+    LOG_DEBUG("result: %f", value + table[row][col]);
     table[row][col] += value;
 }
-void Matrix::prefixSum() {
+Matrix& Matrix::prefixSum() {
     for (size_t i = 0; i < table.size(); ++i) {
         int tmp = 0, row_counter = 0;
         for (size_t j = 0; j < table[i].size(); ++j) {
@@ -22,8 +26,9 @@ void Matrix::prefixSum() {
             }
         }
     }
+    return *this;
 }
-void Matrix::toECDF() {
+Matrix& Matrix::toECDF() {
     if (table.empty() || table[0].empty()) throw std::runtime_error("cannot convert to ECDF: matrix empty/invalid");
 
     double total = table.back().back();
@@ -34,6 +39,7 @@ void Matrix::toECDF() {
             table[i][j] /= total;
         }
     }
+    return *this;
 }
 
 double Matrix::score(double distance, double angle) const {

@@ -5,6 +5,7 @@
 #include <array>
 #include <string>
 
+// defaults for banc-fafb
 static constexpr unsigned int NUM_DISTANCE_BINS = 7;
 static constexpr unsigned int NUM_ANGLE_BINS = 10;
 static constexpr std::array<double, NUM_DISTANCE_BINS> DISTANCE_BINS{ 
@@ -29,6 +30,9 @@ static constexpr std::array<double, NUM_ANGLE_BINS> ANGLE_BINS{
     1
 };
 
+using DoubleVector = std::vector<double>;
+using DoubleVector2D = std::vector<DoubleVector>;
+
 class Matrix {
     public:
         Matrix() : 
@@ -36,24 +40,24 @@ class Matrix {
             angleBins(), 
             table() 
         {}
-        Matrix(const std::array<double, NUM_DISTANCE_BINS>& distanceBins, const std::array<double, NUM_ANGLE_BINS>& angleBins) : 
+        Matrix(const DoubleVector& distanceBins, const DoubleVector& angleBins) : 
             distanceBins(distanceBins.begin(), distanceBins.end()), 
             angleBins(angleBins.begin(), angleBins.end()), 
-            table(NUM_DISTANCE_BINS, 
-                  std::vector<double>(NUM_ANGLE_BINS, 0.0)) 
+            table(distanceBins.size(), 
+                  DoubleVector(angleBins.size(), 0.0)) 
         {}
         void increment(double distance, double angle, double value = 1.0);
-        void prefixSum();
-        void toECDF();
+        Matrix& prefixSum();
+        Matrix& toECDF();
         double score(double distance, double angle) const;
         friend std::ostream& operator<<(std::ostream& out, const Matrix& mat);
-        inline std::vector<double>& getDistanceBins() { return distanceBins; }
-        inline std::vector<double>& getAngleBins() { return angleBins; }
-        inline std::vector<std::vector<double>>& getTable() { return table; }
+        inline DoubleVector& getDistanceBins() { return distanceBins; }
+        inline DoubleVector& getAngleBins() { return angleBins; }
+        inline DoubleVector2D& getTable() { return table; }
     private:
-        std::vector<double> distanceBins;
-        std::vector<double> angleBins;
-        std::vector<std::vector<double>> table;
+        DoubleVector distanceBins;
+        DoubleVector angleBins;
+        DoubleVector2D table;
 
         int findDistanceBin(double value) const;
         int findAngleBin(double value) const;

@@ -1,11 +1,19 @@
 # IDE files
 .vscode
+.idea
+
 # python venv
 .venv
+
 # output files
 obj
+out
+exp
+log
+
 # executables
 nblast++
 test_runner
-log
-out
+
+# data
+data
