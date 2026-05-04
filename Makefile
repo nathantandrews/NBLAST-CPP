@@ -8,7 +8,7 @@ BUILD_TARGET := nblast++
 TEST_TARGET := test_runner
 
 # ==================== source files ====================
-SRC := $(wildcard src/*.cpp)
+SRC := $(shell find src -name "*.cpp")
 TEST_SRC := $(wildcard tests/*.cpp)
 
 BUILD ?= release
@@ -30,15 +30,15 @@ $(BUILD_TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # ==================== test runner ====================
-# Exclude Main.cpp from tests to avoid multiple mains
-TEST_SRC_FILTERED := $(filter-out src/Main.cpp,$(SRC)) $(TEST_SRC)
+TEST_SRC_FILTERED := $(filter-out src/app/Main.cpp,$(SRC)) $(TEST_SRC)
 
 $(TEST_TARGET): $(TEST_SRC_FILTERED)
 	$(CXX) $(CXXFLAGS) -Isrc -Itests $^ -o $@
 
 # ==================== object files ====================
 $(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -Isrc -c $< -o $@
 
 $(OBJ_DIR):
 	mkdir -p $@

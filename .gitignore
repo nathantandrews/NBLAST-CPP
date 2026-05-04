@@ -1,6 +1,7 @@
 # IDE files
 .vscode
 .idea
+.clangd
 
 # python venv
 .venv
