@@ -31,13 +31,17 @@ public:
   inline DoubleVector &getDistanceBins() { return distanceBins; }
   inline DoubleVector &getAngleBins() { return angleBins; }
   inline DoubleVector2D &getTable() { return table; }
+  inline void setInterpolate(bool val) { interpolate = val; }
+  inline bool getInterpolate() const { return interpolate; }
 
 private:
   DoubleVector distanceBins;
   DoubleVector angleBins;
   DoubleVector2D table;
+  bool interpolate = true;
 
   int findDistanceBin(double value) const;
+
   int findAngleBin(double value) const;
 };
 

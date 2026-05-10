@@ -14,6 +14,7 @@ void runQueryMode(const Args &a) {
   LOG_INFO("Using Scoring Matrix: \"%s\"", a.matrixFilepath.c_str());
 
   Matrix mat = MatrixIO::loadMatrixFromTSV(a.matrixFilepath);
+  mat.setInterpolate(a.doInterpolation);
   TimerStats ts;
   if (a.positionalArgs.empty()) {
     if (a.doAllByAll) {

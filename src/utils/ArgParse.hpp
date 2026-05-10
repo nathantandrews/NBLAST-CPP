@@ -33,6 +33,7 @@ struct Args {
   bool doSine = false;
   bool doDump = false;
   bool doAllByAll = false;
+  bool doInterpolation = true;
 
   friend std::ostream &operator<<(std::ostream &out, const Args &a);
 };

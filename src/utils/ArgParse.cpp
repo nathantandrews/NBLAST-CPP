@@ -67,7 +67,8 @@ std::ostream &operator<<(std::ostream &out, const Args &a) {
       << "numGeneratorIterations: " << a.numGeneratorIterations << '\n'
       << "doSine: " << a.doSine << '\n'
       << "doDump: " << a.doDump << '\n'
-      << ": " << a.doAllByAll;
+      << "doAllByAll: " << a.doAllByAll << '\n'
+      << "doInterpolation: " << a.doInterpolation;
   return out;
 }
 
@@ -87,7 +88,7 @@ Args parseArgs(int argc, char *argv[]) {
   Args a;
   int opt = 0;
   bool optIProvided = false;
-  while ((opt = getopt(argc, argv, ":hq:g:i:o:sda")) != -1) {
+  while ((opt = getopt(argc, argv, ":hq:g:i:o:sdan")) != -1) {
     switch (opt) {
     // print usage
     case 'h': {
@@ -166,6 +167,10 @@ Args parseArgs(int argc, char *argv[]) {
     }
     case 'a': {
       a.doAllByAll = true;
+      break;
+    }
+    case 'n': {
+      a.doInterpolation = false;
       break;
     }
     case ':': {
