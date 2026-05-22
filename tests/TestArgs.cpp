@@ -20,23 +20,9 @@ static std::vector<char*> make_argv(std::vector<const char*> args) {
 
 TEST_CASE(test_optToString_query) {
     REQUIRE_EQ(optToString(option_t::Query), "q");
-    REQUIRE_EQ(optToString(option_t::GenerateECDF), "g");
+    REQUIRE_EQ(optToString(option_t::GenerateScoringMatrix), "g");
     REQUIRE_EQ(optToString(option_t::MatrixSpecified), "m");
     REQUIRE_EQ(optToString(option_t::DefaultMode), "default");
-}
-
-TEST_CASE(test_parseFilePair_valid) {
-    auto [file, iters] = parseFilePair("matches.tsv,42");
-
-    REQUIRE_EQ(file, "matches.tsv");
-    REQUIRE_EQ(iters, 42u);
-}
-
-TEST_CASE(test_parseFilePair_large_number) {
-    auto [file, iters] = parseFilePair("foo,1000000");
-
-    REQUIRE_EQ(file, "foo");
-    REQUIRE_EQ(iters, 1'000'000u);
 }
 
 TEST_CASE(test_args_parse_query_mode) {
@@ -44,17 +30,22 @@ TEST_CASE(test_args_parse_query_mode) {
     Args args;
 
     auto argv = make_argv({
-        "prog",
+        "./prog",
         "-q",
-        "matrix.tsv"
+        "matrix.tsv",
+        "-i",
+        "/tmp/test1,/tmp/test2"
     });
 
     int argc = argv.size() - 1;
-
-    args.parse(argc, argv.data());
+    try {
+        args = parseArgs(argc, argv.data());
+    } catch (...) {}
 
     REQUIRE_EQ(args.mode, option_t::Query);
     REQUIRE_EQ(args.matrixFilepath, "matrix.tsv");
+    REQUIRE_EQ(args.queryDatasetFilepath, "/tmp/test1");
+    REQUIRE_EQ(args.targetDatasetFilepath, "/tmp/test2");
 }
 
 TEST_CASE(test_args_parse_generate_mode) {
@@ -64,16 +55,20 @@ TEST_CASE(test_args_parse_generate_mode) {
     auto argv = make_argv({
         "prog",
         "-g",
-        "known.tsv,123"
+        "known.tsv,123",
+        "-i",
+        "/tmp/test1,/tmp/test2"
     });
 
     int argc = argv.size() - 1;
 
-    args.parse(argc, argv.data());
+    args = parseArgs(argc, argv.data());
 
-    REQUIRE_EQ(args.mode, option_t::GenerateECDF);
+    REQUIRE_EQ(args.mode, option_t::GenerateScoringMatrix);
     REQUIRE_EQ(args.knownMatchesFilepath, "known.tsv");
     REQUIRE_EQ(args.numGeneratorIterations, 123u);
+    REQUIRE_EQ(args.queryDatasetFilepath, "/tmp/test1");
+    REQUIRE_EQ(args.targetDatasetFilepath, "/tmp/test2");
 }
 
 TEST_CASE(test_args_parse_sine_flag) {
@@ -84,12 +79,14 @@ TEST_CASE(test_args_parse_sine_flag) {
         "prog",
         "-s",
         "-q",
-        "matrix.swc"
+        "matrix.tsv",
+        "-i",
+        "/tmp/test1,/tmp/test2"
     });
 
     int argc = argv.size() - 1;
 
-    args.parse(argc, argv.data());
+    args = parseArgs(argc, argv.data());
 
     REQUIRE(args.doSine);
 }
