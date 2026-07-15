@@ -19,3 +19,5 @@ test_runner
 # data
 data
 legacy-nblast
+*.rda
+*.RData

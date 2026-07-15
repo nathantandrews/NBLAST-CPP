@@ -44,6 +44,34 @@ Matrix &Matrix::toECDF() {
   return *this;
 }
 
+double Matrix::totalCount() const {
+  double total = 0.0;
+  for (size_t i = 0; i < table.size(); ++i) {
+    for (size_t j = 0; j < table[i].size(); ++j) {
+      total += table[i][j];
+    }
+  }
+  return total;
+}
+
+Matrix &Matrix::toProbability() {
+  if (table.empty() || table[0].empty())
+    throw std::runtime_error(
+        "cannot convert to probability: matrix empty/invalid");
+
+  double total = totalCount();
+  if (total == 0.0)
+    throw std::runtime_error(
+        "cannot convert to probability: total sum of matrix is zero");
+
+  for (size_t i = 0; i < table.size(); ++i) {
+    for (size_t j = 0; j < table[i].size(); ++j) {
+      table[i][j] /= total;
+    }
+  }
+  return *this;
+}
+
 double Matrix::score(double distance, double angle) const {
   if (table.empty() || table[0].empty())
     return 0.0;
@@ -102,7 +130,7 @@ std::ostream &operator<<(std::ostream &out, const Matrix &mat) {
   out << "\n";
 
   for (size_t j = 0; j < mat.table.size(); ++j) {
-    out << std::fixed << std::setprecision(0);
+    out << std::fixed << std::setprecision(2);
     out << mat.distanceBins[j] << "\t";
     out << std::fixed << std::setprecision(precision);
 
