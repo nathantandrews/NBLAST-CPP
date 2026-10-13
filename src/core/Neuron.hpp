@@ -13,7 +13,7 @@ typedef nanoflann::KDTreeSingleIndexAdaptor<
 
 class Neuron {
 public:
-  Neuron(const std::string &filename);
+  Neuron(const std::string &filename, double coordScale = 1.0);
   Neuron(Neuron &&) = default;
   Neuron(const Neuron &) = delete;
   Neuron &operator=(Neuron &&) = default;

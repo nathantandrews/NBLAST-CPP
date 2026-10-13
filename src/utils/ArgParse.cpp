@@ -54,6 +54,7 @@ std::ostream &operator<<(std::ostream &out, const Args &a) {
       << "targetDatasetFilepath: " << a.targetDatasetFilepath << '\n'
       << "mode: " << a.mode << '\n'
       << "numGeneratorIterations: " << a.numGeneratorIterations << '\n'
+      << "coordScale: " << a.coordScale << '\n'
       << "doSine: " << a.doSine << '\n'
       << "doDump: " << a.doDump << '\n'
       << "doAllByAll: " << a.doAllByAll << '\n'
@@ -79,7 +80,7 @@ Args parseArgs(int argc, char *argv[]) {
   Args a;
   int opt = 0;
   bool optIProvided = false;
-  while ((opt = getopt(argc, argv, ":hq:g:i:o:sdaIrl")) != -1) {
+  while ((opt = getopt(argc, argv, ":hq:g:i:o:S:sdaIrl")) != -1) {
     switch (opt) {
     // print usage
     case 'h': {
@@ -144,6 +145,20 @@ Args parseArgs(int argc, char *argv[]) {
         a.queryDatasetFilepath = res.first;
         a.targetDatasetFilepath = res.second;
       }
+      break;
+    }
+    case 'S': {
+      size_t pos = 0;
+      double scale = 0.0;
+      try {
+        scale = std::stod(optarg, &pos);
+      } catch (const std::exception &) {
+        pos = 0;
+      }
+      if (pos == 0 || optarg[pos] != '\0' || !(scale > 0.0)) {
+        throw std::runtime_error("argument for -S must be a positive number");
+      }
+      a.coordScale = scale;
       break;
     }
     case 'o': {

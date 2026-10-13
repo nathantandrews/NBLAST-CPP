@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include <vector>
 
-Neuron::Neuron(const std::string &filepath) {
+Neuron::Neuron(const std::string &filepath, double coordScale) {
   basenameNoExt(filepath, nid);
-  pVector = loadPoints(filepath);
+  pVector = loadPoints(filepath, coordScale);
   for (int i = 0; i < (int)pVector.size(); ++i) {
     idToIndex[pVector[i].id] = i;
   }

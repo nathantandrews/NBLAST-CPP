@@ -10,7 +10,7 @@
 #include <optional>
 #include <string>
 
-PointVector loadPoints(const std::string &filepath) {
+PointVector loadPoints(const std::string &filepath, double coordScale) {
   std::ifstream fin{filepath};
   if (!fin) {
     throw std::runtime_error("Cannot open " + filepath);
@@ -24,6 +24,9 @@ PointVector loadPoints(const std::string &filepath) {
       continue;
     Point p;
     p.parse(line);
+    p.x *= coordScale;
+    p.y *= coordScale;
+    p.z *= coordScale;
     vec.push_back(p);
   }
   fin.close();
@@ -75,14 +78,15 @@ Matrix loadMatrixFromTSV(const std::string &filepath) {
 }
 
 std::vector<Neuron>
-loadNeurons(const std::vector<std::string> &neuronFilepaths) {
+loadNeurons(const std::vector<std::string> &neuronFilepaths,
+            double coordScale) {
   // parse + KD-tree build per file is independent, so load in parallel
   std::vector<std::optional<Neuron>> loaded(neuronFilepaths.size());
   std::exception_ptr failure;
 #pragma omp parallel for schedule(dynamic)
   for (long i = 0; i < (long)neuronFilepaths.size(); ++i) {
     try {
-      loaded[i].emplace(neuronFilepaths[i]);
+      loaded[i].emplace(neuronFilepaths[i], coordScale);
     } catch (...) {
 #pragma omp critical(load_failure)
       if (!failure)

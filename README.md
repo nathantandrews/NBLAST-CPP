@@ -84,6 +84,7 @@ nblast++ -g KnownMatchesFile,NumIters -i QueryDir,TargetDir [-o out.tsv] [-r | -
 | `-s` | use sine instead of cosine similarity |
 | `-I` | interpolate between matrix bins |
 | `-r` / `-l` | use R's bins / log bins when generating a matrix |
+| `-S factor` | multiply SWC coordinates by `factor` on load (`0.001` converts nm to µm) |
 | `-d` | dump intermediate counts and timing to `out/` |
 | `-h` | usage |
 

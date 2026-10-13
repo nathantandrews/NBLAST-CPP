@@ -30,6 +30,8 @@ constexpr const char *USAGE_MSG =
     "bins.\n"
     "  -l                               Use log-spaced FlyCircuit bins "
     "(0.25-64 um, factor 2).\n"
+    "  -S <factor>                      Multiply SWC coordinates by <factor> on load\n"
+    "                                   (e.g. 0.001 converts nm to um; default: 1).\n"
     "  -d                               Dump intermediate files to ./out/.\n"
     "  -h                               Print this message and exit.\n";
 
@@ -54,6 +56,7 @@ struct Args {
   std::string matrixOutfile;
   option_t mode = option_t::DefaultMode;
   uint64_t numGeneratorIterations = 0;
+  double coordScale = 1.0;
   bool doSine = false;
   bool doDump = false;
   bool doAllByAll = false;
