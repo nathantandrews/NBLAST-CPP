@@ -7,7 +7,10 @@
 #include "utils/StringUtils.hpp"
 #include "utils/Timer.hpp"
 
+#include <chrono>
+#include <cstdlib>
 #include <iostream>
+#include <unordered_map>
 
 void runQueryMode(const Args &a) {
   LOG_INFO("Using Scoring Matrix: \"%s\"", a.matrixFilepath.c_str());
@@ -24,38 +27,44 @@ void runQueryMode(const Args &a) {
             filenameToPath(a.queryDatasetFilepath, neuronID, ".swc");
         neuronFilepaths.push_back(neuronFilepath);
       }
+      // phase timings go to stderr when NBLAST_TIMING is set (see scripts/timing)
+      const bool timing = std::getenv("NBLAST_TIMING") != nullptr;
+      auto t0 = std::chrono::steady_clock::now();
       std::vector<Neuron> neurons = loadNeurons(neuronFilepaths);
+      auto t1 = std::chrono::steady_clock::now();
       std::vector<Score> scoreVector = allByAll(mat, neurons);
+      auto t2 = std::chrono::steady_clock::now();
+      if (timing) {
+        std::cerr << "TIMING\tprep\t"
+                  << std::chrono::duration<double>(t1 - t0).count() << "\n"
+                  << "TIMING\tscore\t"
+                  << std::chrono::duration<double>(t2 - t1).count() << "\n";
+      }
       for (const Score &s : scoreVector) {
         s.print(std::cout, "\t");
       }
       std::cout.flush();
       return;
     } else {
-      std::vector<std::string> queryFilepaths;
-      std::vector<std::string> targetFilepaths;
+      // each distinct neuron file is loaded once, however many pairs use it
+      std::vector<std::string> neuronFilepaths;
+      std::unordered_map<std::string, size_t> indexOf;
+      auto intern = [&](const std::string &path) {
+        auto [it, inserted] = indexOf.emplace(path, neuronFilepaths.size());
+        if (inserted)
+          neuronFilepaths.push_back(path);
+        return it->second;
+      };
+      std::vector<std::pair<size_t, size_t>> pairs;
       std::string queryID, targetID;
       while (std::cin >> queryID >> targetID) {
-        std::string queryFilepath =
-            filenameToPath(a.queryDatasetFilepath, queryID, ".swc");
-        queryFilepaths.push_back(queryFilepath);
-        std::string targetFilepath =
-            filenameToPath(a.targetDatasetFilepath, targetID, ".swc");
-        targetFilepaths.push_back(targetFilepath);
+        size_t qi = intern(filenameToPath(a.queryDatasetFilepath, queryID, ".swc"));
+        size_t ti = intern(filenameToPath(a.targetDatasetFilepath, targetID, ".swc"));
+        pairs.emplace_back(qi, ti);
       }
-      std::vector<Neuron> queryNeurons = loadNeurons(queryFilepaths);
-      std::vector<Neuron> targetNeurons = loadNeurons(targetFilepaths);
-      if (queryNeurons.size() != targetNeurons.size()) {
-        throw std::runtime_error(
-            "query neuron list doesnt match target neuron list");
-      }
-      std::vector<Score> scoreVector;
-      scoreVector.reserve(queryNeurons.size());
-      for (size_t i = 0; i < queryNeurons.size(); ++i) {
-        scoreVector.push_back(timeFunction(ts, [&]() {
-          return query(mat, queryNeurons[i], targetNeurons[i]);
-        }));
-      }
+      std::vector<Neuron> neurons = loadNeurons(neuronFilepaths);
+      std::vector<Score> scoreVector =
+          timeFunction(ts, [&]() { return queryPairs(mat, neurons, pairs); });
 
       for (const Score &s : scoreVector) {
         s.print(std::cout, "\t");

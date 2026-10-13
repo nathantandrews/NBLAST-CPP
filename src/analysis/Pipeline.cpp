@@ -18,22 +18,69 @@ Score query(const Matrix &mat, const Neuron &query, const Neuron &target) {
   return s;
 }
 
+// Self-scores for every neuron; each is independent so this parallelises trivially.
+static std::vector<double> allSelfScores(const Matrix &mat,
+                                         const std::vector<Neuron> &neurons) {
+  std::vector<double> selfScores(neurons.size());
+#pragma omp parallel for schedule(dynamic)
+  for (long i = 0; i < (long)neurons.size(); ++i)
+    selfScores[i] = neurons[i].selfScore(mat);
+  return selfScores;
+}
+
+// score(i,j) == score(j,i), so only the upper triangle is computed and mirrored.
+// Each pair is written by exactly one thread and no sums cross threads, so the
+// result is identical for any thread count.
 std::vector<Score> allByAll(const Matrix &mat,
                             const std::vector<Neuron> &neurons) {
-  std::vector<double> selfScores;
-  selfScores.reserve(neurons.size());
-  for (const auto &n : neurons)
-    selfScores.push_back(n.selfScore(mat));
+  const size_t n = neurons.size();
+  std::vector<double> selfScores = allSelfScores(mat, neurons);
+
+  std::vector<std::pair<size_t, size_t>> upper;
+  upper.reserve(n * (n + 1) / 2);
+  for (size_t i = 0; i < n; ++i)
+    for (size_t j = i; j < n; ++j)
+      upper.emplace_back(i, j);
+
+  std::vector<double> scores(n * n);
+#pragma omp parallel for schedule(dynamic, 16)
+  for (long k = 0; k < (long)upper.size(); ++k) {
+    size_t i = upper[k].first, j = upper[k].second;
+    double s = neurons[i].score(neurons[j], mat, selfScores[i], selfScores[j]);
+    scores[i * n + j] = s;
+    scores[j * n + i] = s;
+  }
 
   std::vector<Score> scoreVector;
-  scoreVector.reserve(neurons.size() * neurons.size());
-  for (size_t i = 0; i < neurons.size(); ++i) {
-    for (size_t j = 0; j < neurons.size(); ++j) {
-      double s = neurons[i].score(neurons[j], mat, selfScores[i], selfScores[j]);
-      scoreVector.push_back({neurons[i].getNID(), neurons[j].getNID(), s});
-    }
-  }
+  scoreVector.reserve(n * n);
+  for (size_t i = 0; i < n; ++i)
+    for (size_t j = 0; j < n; ++j)
+      scoreVector.push_back({neurons[i].getNID(), neurons[j].getNID(), scores[i * n + j]});
   return scoreVector;
+}
+
+// Scores arbitrary (query, target) index pairs. Self-scores are computed once per
+// neuron that is actually used, not once per pair.
+std::vector<Score> queryPairs(const Matrix &mat,
+                              const std::vector<Neuron> &neurons,
+                              const std::vector<std::pair<size_t, size_t>> &pairs) {
+  std::vector<char> used(neurons.size(), 0);
+  for (const auto &p : pairs)
+    used[p.first] = used[p.second] = 1;
+  std::vector<double> selfScores(neurons.size(), 0.0);
+#pragma omp parallel for schedule(dynamic)
+  for (long i = 0; i < (long)neurons.size(); ++i)
+    if (used[i])
+      selfScores[i] = neurons[i].selfScore(mat);
+
+  std::vector<Score> out(pairs.size());
+#pragma omp parallel for schedule(dynamic, 16)
+  for (long k = 0; k < (long)pairs.size(); ++k) {
+    size_t i = pairs[k].first, j = pairs[k].second;
+    out[k] = {neurons[i].getNID(), neurons[j].getNID(),
+              neurons[i].score(neurons[j], mat, selfScores[i], selfScores[j])};
+  }
+  return out;
 }
 
 std::vector<PAVector> calcDistsDotprods(const std::vector<Neuron> &queryNeurons,

@@ -18,6 +18,10 @@ Score query(const Matrix &mat, const Neuron &query, const Neuron &target);
 std::vector<Score> allByAll(const Matrix &mat,
                             const std::vector<Neuron> &neurons);
 
+std::vector<Score> queryPairs(const Matrix &mat,
+                              const std::vector<Neuron> &neurons,
+                              const std::vector<std::pair<size_t, size_t>> &pairs);
+
 std::vector<PAVector> calcDistsDotprods(const std::vector<Neuron> &queryNeurons,
                                          const std::vector<Neuron> &targetNeurons,
                                          const std::vector<std::pair<size_t, size_t>> &subset,

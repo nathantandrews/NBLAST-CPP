@@ -4,8 +4,10 @@
 #include "utils/Logging.hpp"
 #include "utils/StringUtils.hpp"
 
+#include <exception>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <string>
 
 PointVector loadPoints(const std::string &filepath) {
@@ -74,11 +76,25 @@ Matrix loadMatrixFromTSV(const std::string &filepath) {
 
 std::vector<Neuron>
 loadNeurons(const std::vector<std::string> &neuronFilepaths) {
-  std::vector<Neuron> neuronVector;
-  neuronVector.reserve(neuronFilepaths.size());
-  for (size_t i = 0; i < neuronFilepaths.size(); ++i) {
-    neuronVector.emplace_back(neuronFilepaths.at(i));
+  // parse + KD-tree build per file is independent, so load in parallel
+  std::vector<std::optional<Neuron>> loaded(neuronFilepaths.size());
+  std::exception_ptr failure;
+#pragma omp parallel for schedule(dynamic)
+  for (long i = 0; i < (long)neuronFilepaths.size(); ++i) {
+    try {
+      loaded[i].emplace(neuronFilepaths[i]);
+    } catch (...) {
+#pragma omp critical(load_failure)
+      if (!failure)
+        failure = std::current_exception();
+    }
   }
+  if (failure)
+    std::rethrow_exception(failure);
+  std::vector<Neuron> neuronVector;
+  neuronVector.reserve(loaded.size());
+  for (auto &n : loaded)
+    neuronVector.push_back(std::move(*n));
   return neuronVector;
 }
 

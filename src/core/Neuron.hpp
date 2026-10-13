@@ -22,6 +22,9 @@ public:
   std::string getNID(void) const { return nid; }
   PAVector nearestNeighbors(const Neuron &target, bool doSine = false,
                             bool doPrint = false) const;
+  // sum of match scores of this neuron's segments against target (no normalisation)
+  double directedScore(const Neuron &target, const Matrix &mat,
+                       bool doSine = false) const;
   double selfScore(const Matrix &mat, bool doSine = false) const;
   double score(const Neuron &target, const Matrix &mat,
                double querySelf, double targetSelf,
